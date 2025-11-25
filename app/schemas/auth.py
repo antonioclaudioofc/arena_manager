@@ -8,3 +8,7 @@ class AuthCreate(BaseModel):
     last_name: str
     password: str
     role: str
+
+class UserVerification(BaseModel):
+    password: str
+    new_password: str = Field(min_length=6)
