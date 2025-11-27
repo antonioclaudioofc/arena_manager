@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from db.database import engine, Base
-from routers import auth, court, admin, user, schedule
+from routers import auth, court, admin, user, schedule, reservation
 
 app = FastAPI()
 
@@ -11,3 +11,4 @@ app.include_router(admin.router)
 app.include_router(auth.router)
 app.include_router(court.router)
 app.include_router(schedule.router)
+app.include_router(reservation.router)
