@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "../components/button";
+import { toast } from "sonner";
+import { useContext, useEffect } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { Button } from "../components/Button";
 import {
   Form,
   FormField,
@@ -14,32 +18,47 @@ import {
 } from "../components/Form";
 import { Input } from "../components/Input";
 import logo from "../assets/logo.svg";
-import { ArrowLeft } from "@phosphor-icons/react";
+import { MoveLeft } from "lucide-react";
+import { useNavigate } from "react-router";
 
-const formSchema = z.object({
-  email: z.string().min(2, {
-    message: "Campo obrigatório",
-  }),
-  username: z.string().min(2, {
-    message: "Campo obrigatório",
-  }),
-  first_name: z.string().min(2, {
-    message: "Campo obrigatório",
-  }),
-  last_name: z.string().min(2, { message: "Campo obrigatório" }),
-  password: z.string().min(6, {
-    message: "A senha deve ter no mínimo 6 caracteres",
-  }),
-  confirm_password: z.string().min(6, {
-    message: "A confirmação de senha deve ter no mínimo 6 caracteres",
-  }),
-});
+const formSchema = z
+  .object({
+    email: z.string().min(2, {
+      message: "Campo obrigatório",
+    }),
+    username: z.string().min(2, {
+      message: "Campo obrigatório",
+    }),
+    first_name: z.string().min(2, {
+      message: "Campo obrigatório",
+    }),
+    last_name: z.string().min(2, { message: "Campo obrigatório" }),
+    password: z.string().min(6, {
+      message: "A senha deve ter no mínimo 6 caracteres",
+    }),
+    confirm_password: z.string().min(6, {
+      message: "A confirmação de senha deve ter no mínimo 6 caracteres",
+    }),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    path: ["confirm_password"],
+    message: "As senhas não conferem",
+  });
 
-function onSubmit(values: z.infer<typeof formSchema>) {
-  console.log(values);
-}
+type AuthSchema = z.infer<typeof formSchema>;
 
 export default function Register() {
+  const [loading, setLoading] = useState(false);
+  const auth = useContext(AuthContext);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (auth?.token) {
+      navigate("/");
+    }
+  }, [auth?.token]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,8 +67,69 @@ export default function Register() {
       first_name: "",
       last_name: "",
       password: "",
+      confirm_password: "",
     },
   });
+
+  const onSubmit = async (values: AuthSchema) => {
+    const API_BASE = "http://localhost:8000";
+    setLoading(true);
+
+    try {
+      const { confirm_password, ...rest } = values as any;
+      const payload = { ...rest, role: "user" };
+
+      const res = await fetch(`${API_BASE}/auth/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("Erro ao registrar");
+      }
+
+      try {
+        const loginBody = new URLSearchParams();
+        loginBody.append("username", rest.username || "");
+        loginBody.append("password", rest.password || "");
+
+        const tokenRes = await fetch(`${API_BASE}/auth/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: loginBody.toString(),
+        });
+
+        if (!tokenRes.ok) {
+          toast.success("Conta criada. Por favor faça login.");
+          navigate("/login");
+          return;
+        }
+
+        const tokenData = await tokenRes.json();
+        if (tokenData?.access_token) {
+          try {
+            auth.login(tokenData.access_token);
+          } catch {
+            localStorage.setItem("access_token", tokenData.access_token);
+          }
+          localStorage.setItem("token_type", tokenData.token_type || "bearer");
+        }
+
+        toast.success("Registrado e autenticado com sucesso!");
+        navigate("/");
+      } catch (loginErr: any) {
+        console.error("Auto-login falhou:", loginErr);
+        toast.success("Conta criada. Por favor faça login.");
+        navigate("/login");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erro no registro");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="w-full min-h-screen bg-green-700 flex justify-center items-center p-8">
@@ -58,7 +138,7 @@ export default function Register() {
           href="/"
           className="p-3 items-center flex gap-3 border border-gray-400 w-max rounded-lg text-green-700"
         >
-          <ArrowLeft className="w-6 h-6" />
+          <MoveLeft className="w-6 h-6" />
           <span className="text-base">Voltar</span>
         </a>
         <div className="mb-8">
@@ -81,7 +161,11 @@ export default function Register() {
                 <FormItem>
                   <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input placeholder="Insira seu e-mail" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="Insira seu e-mail"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,7 +217,11 @@ export default function Register() {
                 <FormItem>
                   <FormLabel>Senha</FormLabel>
                   <FormControl>
-                    <Input placeholder="Insira seu senha" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Insira seu senha"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,14 +234,25 @@ export default function Register() {
                 <FormItem>
                   <FormLabel>Confirmar Senha</FormLabel>
                   <FormControl>
-                    <Input placeholder="Confirme sua senha" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Confirme sua senha"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="flex items-center justify-between">
-              <Button type="submit">Entrar</Button>
+            <div>
+              <Button
+                type="submit"
+                disabled={loading}
+                style={{ backgroundColor: "var(--brand-600)" }}
+                className="w-full"
+              >
+                {loading ? "Cadastrando..." : "Criar conta"}
+              </Button>
             </div>
           </form>
         </Form>

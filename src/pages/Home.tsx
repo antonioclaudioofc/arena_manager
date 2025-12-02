@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useContext } from "react";
 import CourtList from "../components/CourtList";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Home() {
   const courts = [
@@ -69,6 +70,10 @@ export default function Home() {
   ];
 
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const auth = useContext(AuthContext);
+  const token = auth?.token || localStorage.getItem("access_token");
+
+  console.log("Auth token:", token);
 
   // build a simple list of 7 dates starting from the first schedule date
   const datePills = useMemo(() => {
@@ -141,6 +146,12 @@ export default function Home() {
       </div>
 
       <div className="space-y-6">
+        {token ? (
+          <div className="bg-gray-50 p-4 rounded-md text-sm break-all">
+            <strong>Token:</strong>
+            <div className="mt-2 font-mono text-xs text-gray-700">{token}</div>
+          </div>
+        ) : null}
         <CourtList courts={courts} scheduleMap={scheduleMap} />
       </div>
     </section>

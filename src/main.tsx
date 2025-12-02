@@ -5,14 +5,46 @@ import App from "./App";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { Toaster } from "sonner";
+
+import { AuthProvider } from "./context/AuthContext";
+import PublicRoute from "./routes/PublicRoute";
 
 createRoot(document.getElementById("root")!).render(
-  <BrowserRouter>
-    <Routes>
-      <Route index element={<App />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-    </Routes>
-  </BrowserRouter>
+  <AuthProvider>
+    <BrowserRouter>
+      <Toaster richColors position="top-center" />
+
+      <Routes>
+        <Route index element={<App />} />
+
+        <Route
+          path="/home"
+          element={
+            <PublicRoute>
+              <Home />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  </AuthProvider>
 );
