@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 
 interface UserProfile {
   id: number;
-  name: string;
+  first_name: string;
   email: string;
   role: string;
 }
@@ -47,7 +47,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await res.json();
       setUser(profile);
     } catch (err) {
-      console.error(err);
       logout();
     }
   };

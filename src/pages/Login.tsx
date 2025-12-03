@@ -140,11 +140,11 @@ export default function Login() {
         </Form>
 
         <a
-          href="/login"
+          href="/register"
           className="mt-4 text-center text-sm cursor-pointer hover:opacity-75 transition-opacity block "
         >
-          <span>Já possui conta? </span>
-          <span className="text-green-700 underline">Entrar na conta</span>
+          <span>Não possui conta? </span>
+          <span className="text-green-700 underline">Criar uma conta</span>
         </a>
       </div>
     </section>
