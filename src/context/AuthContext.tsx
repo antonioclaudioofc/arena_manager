@@ -11,28 +11,34 @@ interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
+  loading: boolean;
   login: (token: string) => void;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType>({
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
+  loading: true,
   login: () => {},
   logout: () => {},
 });
 
 const SECRET = new TextEncoder().encode(import.meta.env.VITE_SECRET_KEY);
 
-function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(localStorage.getItem("access_token"));
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("access_token")
+  );
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const validateToken = async (t: string) => {
     try {
       await jwtVerify(t, SECRET);
       return true;
-    } catch {
+    } catch (err) {
+      console.error("Token inválido:", err);
       return false;
     }
   };
@@ -44,24 +50,35 @@ function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!res.ok) throw new Error("Erro ao buscar perfil");
+
       const profile = await res.json();
       setUser(profile);
     } catch (err) {
+      console.error("Erro ao carregar perfil:", err);
       logout();
     }
   };
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-    (async () => {
+    const init = async () => {
       const valid = await validateToken(token);
+
       if (!valid) {
         logout();
+        setLoading(false);
         return;
       }
+
       await fetchUserProfile(token);
-    })();
+      setLoading(false);
+    };
+
+    init();
   }, [token]);
 
   const login = (jwt: string) => {
@@ -76,10 +93,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
-export { AuthContext, AuthProvider };
+  

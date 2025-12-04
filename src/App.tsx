@@ -9,7 +9,6 @@ import { ChevronDown, CircleUserRound, LogOut, Volleyball } from "lucide-react";
 
 export default function App() {
   const auth = useContext(AuthContext);
-  const token = auth.token;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -17,6 +16,7 @@ export default function App() {
     auth.logout();
     navigate("/login");
   };
+  
 
   return (
     <div className="min-h-screen w-full bg-gray-200">
