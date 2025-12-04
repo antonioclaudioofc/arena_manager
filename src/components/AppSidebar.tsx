@@ -1,5 +1,11 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react";
-
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  ClipboardList,
+  Settings,
+  Trophy,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,48 +17,57 @@ import {
   SidebarMenuItem,
 } from "./Sidebar";
 
-// Menu items.
-const items = [
+const adminItems = [
   {
-    title: "Home",
-    url: "#",
-    icon: Home,
+    title: "Dashboard",
+    url: "/admin",
+    icon: LayoutDashboard,
   },
   {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
+    title: "Quadras",
+    url: "/admin/courts",
+    icon: Trophy,
   },
   {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
+    title: "Horários",
+    url: "/admin/schedules",
+    icon: CalendarDays,
   },
   {
-    title: "Search",
-    url: "#",
-    icon: Search,
+    title: "Reservas",
+    url: "/admin/reservations",
+    icon: ClipboardList,
   },
   {
-    title: "Settings",
-    url: "#",
+    title: "Usuários",
+    url: "/admin/users",
+    icon: Users,
+  },
+  {
+    title: "Configurações",
+    url: "/admin/config",
     icon: Settings,
   },
 ];
 
 export function AppSidebar() {
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-gray-200">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-600 font-semibold px-4 py-2">
+            Administração
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
+                  <SidebarMenuButton
+                    asChild
+                    className="hover:bg-green-50 hover:text-green-700 transition-colors"
+                  >
+                    <a href={item.url} className="flex items-center gap-3">
+                      <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>

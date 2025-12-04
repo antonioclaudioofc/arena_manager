@@ -11,7 +11,15 @@ import PublicRoute from "./routes/PublicRoute";
 import AdminRoute from "./routes/AdminRoute";
 import UserRoute from "./routes/UserRoute";
 import NotFound from "./pages/NotFound";
+
+// Admin pages
 import Dashboard from "./pages/Dashboard";
+import AdminConfig from "./pages/AdminConfig";
+import AdminCourts from "./pages/AdminCourts";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminReservations from "./pages/AdminReservations";
+import AdminSchedules from "./pages/AdminSchedules";
+import AdminUsers from "./pages/AdminUsers";
 
 createRoot(document.getElementById("root")!).render(
   <AuthProvider>
@@ -41,13 +49,20 @@ createRoot(document.getElementById("root")!).render(
 
         {/* Rotas Admin */}
         <Route
-          path="/admin/*"
+          path="/admin"
           element={
             <PublicRoute>
               <Dashboard />
             </PublicRoute>
           }
-        />
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="courts" element={<AdminCourts />} />
+          <Route path="schedules" element={<AdminSchedules />} />
+          <Route path="reservations" element={<AdminReservations />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="config" element={<AdminConfig />} />
+        </Route>
 
         {/* Rotas User */}
         <Route
