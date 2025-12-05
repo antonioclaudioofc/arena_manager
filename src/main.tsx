@@ -51,9 +51,9 @@ createRoot(document.getElementById("root")!).render(
         <Route
           path="/admin"
           element={
-            <PublicRoute>
+            <AdminRoute>
               <Dashboard />
-            </PublicRoute>
+            </AdminRoute>
           }
         >
           <Route index element={<AdminDashboard />} />

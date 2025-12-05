@@ -34,8 +34,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (auth.token) navigate("/home");
-  }, [auth.token, navigate]);
+    if (auth.token && auth.user) {
+      if (auth.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [auth.token, auth.user, navigate]);
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(formSchema),
@@ -67,7 +73,7 @@ export default function Login() {
       toast.success("Login realizado com sucesso!");
 
       auth.login(data.access_token);
-      navigate("/");
+      // O redirecionamento será feito pelo useEffect quando auth.user for populado
     } catch (err) {
       console.error(err);
       toast.error("Erro ao conectar com o servidor");
