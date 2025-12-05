@@ -3,6 +3,7 @@ import ScheduleCard from "./ScheduleCard";
 export default function CourtList({
   courts,
   scheduleMap,
+  onReservationSuccess,
 }: {
   courts: {
     id: number;
@@ -21,6 +22,7 @@ export default function CourtList({
       court_id: number;
     }[]
   >;
+  onReservationSuccess?: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -54,7 +56,13 @@ export default function CourtList({
                   Nenhum horário disponível
                 </div>
               ) : (
-                schedules.map((s) => <ScheduleCard key={s.id} schedule={s} />)
+                schedules.map((s) => (
+                  <ScheduleCard
+                    key={s.id}
+                    schedule={s}
+                    onReservationSuccess={onReservationSuccess}
+                  />
+                ))
               )}
             </div>
           </div>

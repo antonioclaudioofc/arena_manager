@@ -1,81 +1,76 @@
-import { useMemo, useState, useContext } from "react";
+import { useMemo, useState, useEffect, useContext, useCallback } from "react";
 import CourtList from "../components/CourtList";
+import { toast } from "sonner";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Home() {
-  const courts = [
-    {
-      id: 1,
-      name: "Arena Prime",
-      sports_type: "Futebol",
-      description: "Quadra principal",
-    },
-    {
-      id: 2,
-      name: "Quadra B",
-      sports_type: "Futebol Society",
-      description: "Coberta",
-    },
-  ];
-
-  const schedules = [
-    {
-      id: 1,
-      date: "2025-12-01",
-      start_time: "16:00",
-      end_time: "17:00",
-      available: true,
-      court_id: 1,
-    },
-    {
-      id: 2,
-      date: "2025-12-01",
-      start_time: "17:00",
-      end_time: "18:00",
-      available: true,
-      court_id: 1,
-    },
-    {
-      id: 3,
-      date: "2025-12-01",
-      start_time: "18:00",
-      end_time: "19:00",
-      available: false,
-      court_id: 1,
-    },
-    {
-      id: 4,
-      date: "2025-12-01",
-      start_time: "19:00",
-      end_time: "20:00",
-      available: true,
-      court_id: 1,
-    },
-    {
-      id: 5,
-      date: "2025-12-01",
-      start_time: "20:00",
-      end_time: "22:00",
-      available: false,
-      court_id: 1,
-    },
-    {
-      id: 6,
-      date: "2025-12-01",
-      start_time: "10:00",
-      end_time: "11:00",
-      available: true,
-      court_id: 2,
-    },
-  ];
-
+  const [courts, setCourts] = useState<any[]>([]);
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [reservedScheduleIds, setReservedScheduleIds] = useState<number[]>([]);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-  const auth = useContext(AuthContext);
-  const token = auth?.token || localStorage.getItem("access_token");
+  const { token } = useContext(AuthContext);
 
-  // build a simple list of 7 dates starting from the first schedule date
+  const fetchReservedSchedules = useCallback(async () => {
+    if (!token) {
+      setReservedScheduleIds([]);
+      return;
+    }
+    try {
+      const response = await fetch("http://localhost:8000/reservation/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const reservations = await response.json();
+        const scheduleIds = reservations.map((r: any) => r.schedule_id);
+        setReservedScheduleIds(scheduleIds);
+      } else {
+        setReservedScheduleIds([]);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar reservas:", err);
+      setReservedScheduleIds([]);
+    }
+  }, [token]);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const schedulesResponse = await fetch(
+        `http://localhost:8000/schedule/?t=${Date.now()}`
+      );
+      if (!schedulesResponse.ok) throw new Error("Erro ao buscar horários");
+      const schedulesData = await schedulesResponse.json();
+      setSchedules(schedulesData);
+    } catch (err) {
+      console.error("Erro ao carregar horários:", err);
+      toast.error("Erro ao carregar horários");
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const courtsResponse = await fetch("http://localhost:8000/");
+        if (!courtsResponse.ok) throw new Error("Erro ao buscar quadras");
+        const courtsData = await courtsResponse.json();
+        setCourts(courtsData);
+
+        await fetchSchedules();
+        await fetchReservedSchedules();
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err);
+        toast.error("Erro ao carregar quadras ou horários");
+      }
+    };
+
+    fetchData();
+  }, [fetchSchedules, fetchReservedSchedules]);
+
+  // build a simple list of 7 dates starting from today
   const datePills = useMemo(() => {
-    const base = new Date("2025-12-01");
+    const base = new Date();
+    base.setHours(0, 0, 0, 0); // Reset time to start of day
     const arr = [] as { label: string; iso: string }[];
     for (let i = 0; i < 7; i++) {
       const d = new Date(base);
@@ -96,13 +91,21 @@ export default function Home() {
   const scheduleMap = useMemo(() => {
     const map: Record<number, typeof schedules> = {};
     const selectedIso = datePills[selectedDateIndex].iso;
+    console.log("Filtrando schedules para data:", selectedIso);
+    console.log("Schedules disponíveis:", schedules);
     schedules.forEach((s) => {
+      console.log(`Schedule ${s.id}: date="${s.date}", matches=${s.date === selectedIso}`);
       if (s.date !== selectedIso) return;
+      // Marcar como indisponível se já tem reserva
+      const schedule = {
+        ...s,
+        available: s.available && !reservedScheduleIds.includes(s.id),
+      };
       map[s.court_id] = map[s.court_id] || [];
-      map[s.court_id].push(s);
+      map[s.court_id].push(schedule);
     });
     return map;
-  }, [schedules, selectedDateIndex, datePills]);
+  }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
 
   return (
     <section>
@@ -144,7 +147,14 @@ export default function Home() {
       </div>
 
       <div className="space-y-6">
-        <CourtList courts={courts} scheduleMap={scheduleMap} />
+        <CourtList
+          courts={courts}
+          scheduleMap={scheduleMap}
+          onReservationSuccess={() => {
+            fetchSchedules();
+            fetchReservedSchedules();
+          }}
+        />
       </div>
     </section>
   );

@@ -70,7 +70,7 @@ export default function App() {
                 <ul className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-xl text-gray-800 overflow-hidden animate-fadeIn z-50 border border-gray-200">
                   <li>
                     <a
-                      href="/profile"
+                      href="/user/profile"
                       onClick={() => setOpen(false)}
                       className="block px-4 py-3 hover:bg-gray-100 flex items-center gap-2"
                     >

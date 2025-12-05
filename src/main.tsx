@@ -20,6 +20,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminReservations from "./pages/AdminReservations";
 import AdminSchedules from "./pages/AdminSchedules";
 import AdminUsers from "./pages/AdminUsers";
+// User pages
+import Profile from "./pages/Profile";
 
 createRoot(document.getElementById("root")!).render(
   <AuthProvider>
@@ -78,7 +80,7 @@ createRoot(document.getElementById("root")!).render(
           path="/user/profile"
           element={
             <UserRoute>
-              <div>Profile - Em Construção</div>
+              <Profile />
             </UserRoute>
           }
         />
