@@ -16,16 +16,16 @@ user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def read_all_schedules(user: user_dependency,
-                             db: db_dependency):
-    return await ScheduleService.read_all_schedules(user, db)
+async def read_all_schedules(
+        db: db_dependency):
+    return await ScheduleService.read_all_schedules(db)
 
 
 @router.get("/{schedule_id}", status_code=status.HTTP_200_OK)
-async def read_schedule(user: user_dependency,
-                        db: db_dependency,
-                        schedule_id: int = Path(gt=0)):
-    return await ScheduleService.read_schedule(user, db, schedule_id)
+async def read_schedule(
+        db: db_dependency,
+        schedule_id: int = Path(gt=0)):
+    return await ScheduleService.read_schedule(db, schedule_id)
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -36,7 +36,7 @@ async def create_schedule(user:  user_dependency,
     await ScheduleService.create_schedule(user, db, schedule_request, court_id)
 
 
-@router.post("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_schedule(user: user_dependency,
                           db: db_dependency,
                           schedule_request: ScheduleCreate,

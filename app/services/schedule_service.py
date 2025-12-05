@@ -11,22 +11,14 @@ from models.schedule import Schedules
 class ScheduleService:
     user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
-    async def read_all_schedules(user: user_dependency,
-                                 db: db_dependency):
-
-        if user is None or user.get("user_role") != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication Failed")
+    async def read_all_schedules(
+            db: db_dependency):
 
         return db.query(Schedules).all()
 
-    async def read_schedule(user: user_dependency,
-                            db: db_dependency,
-                            schedule_id: int = Path(gt=0)):
-
-        if user is None or user.get("user_role") != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication Failed")
+    async def read_schedule(
+            db: db_dependency,
+            schedule_id: int = Path(gt=0)):
 
         schedule_model = db.query(Schedules).filter(
             Schedules.id == schedule_id).first()

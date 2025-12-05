@@ -17,7 +17,13 @@ class UserService:
         if user is None:
             return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authenticated Failed")
 
-        return db.query(Users).filter(Users.id == user.get("id")).first()
+        user_model = db.query(Users).filter(Users.id == user.get("id")).first()
+
+        if not user_model:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        return user_model
 
     async def change_password(user: user_dependency, db: db_dependency, user_verification: UserVerification):
         if user is None:
