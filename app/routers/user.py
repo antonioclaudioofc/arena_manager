@@ -4,6 +4,7 @@ from typing import Annotated
 from services.auth_service import AuthService
 from starlette import status
 from schemas.auth import UserVerification
+from schemas.reservation import ReservationResponse
 from services.user_service import UserService
 
 
@@ -26,3 +27,15 @@ async def change_password(user: user_dependency,
                           db: db_dependency,
                           user_verification: UserVerification):
     await UserService.change_password(user, db, user_verification)
+
+
+@router.get("/reservations", status_code=status.HTTP_200_OK, response_model=list[ReservationResponse])
+async def get_user_reservations(user: user_dependency,
+                                db: db_dependency):
+    return await UserService.get_user_reservations(user, db)
+
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(user: user_dependency,
+                         db: db_dependency):
+    await UserService.delete_self(user, db)
