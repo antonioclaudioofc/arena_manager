@@ -16,7 +16,6 @@ export default function App() {
     auth.logout();
     navigate("/login");
   };
-  
 
   return (
     <div className="min-h-screen w-full bg-gray-200">
@@ -81,7 +80,7 @@ export default function App() {
 
                   <li>
                     <a
-                      href="/reservas"
+                      href="/user/reservations"
                       onClick={() => setOpen(false)}
                       className="block px-4 py-3 hover:bg-gray-100 flex items-center gap-2"
                     >
@@ -103,7 +102,6 @@ export default function App() {
               )}
             </div>
           ) : (
-            // MENU QUANDO NÃO ESTIVER LOGADO
             <div className="flex items-center gap-3">
               <a href="/login">
                 <Button

@@ -12,7 +12,6 @@ import AdminRoute from "./routes/AdminRoute";
 import UserRoute from "./routes/UserRoute";
 import NotFound from "./pages/NotFound";
 
-// Admin pages
 import Dashboard from "./pages/Dashboard";
 import AdminConfig from "./pages/AdminConfig";
 import AdminCourts from "./pages/AdminCourts";
@@ -20,8 +19,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminReservations from "./pages/AdminReservations";
 import AdminSchedules from "./pages/AdminSchedules";
 import AdminUsers from "./pages/AdminUsers";
-// User pages
 import Profile from "./pages/Profile";
+import Reservations from "./pages/Reservations";
 
 createRoot(document.getElementById("root")!).render(
   <AuthProvider>
@@ -49,7 +48,6 @@ createRoot(document.getElementById("root")!).render(
           }
         />
 
-        {/* Rotas Admin */}
         <Route
           path="/admin"
           element={
@@ -66,12 +64,11 @@ createRoot(document.getElementById("root")!).render(
           <Route path="config" element={<AdminConfig />} />
         </Route>
 
-        {/* Rotas User */}
         <Route
-          path="/user/reservas"
+          path="/user/reservations"
           element={
             <UserRoute>
-              <div>Minhas Reservas - Em Construção</div>
+              <Reservations />
             </UserRoute>
           }
         />
