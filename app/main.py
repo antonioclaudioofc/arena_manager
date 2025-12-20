@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from db.database import engine, Base
-from routers import auth, court, admin, user, schedule, reservation
+from app.core.database import engine, Base
+from app.modules.admin import router
+from app.modules.auth import auth
+from app.modules.court import court
+from app.modules.reservation import reservation
+from app.modules.user import user
+from app.modules.schedule import schedule
 
 app = FastAPI()
 
@@ -18,7 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router)
-app.include_router(admin.router)
+app.include_router(router.router)
 app.include_router(auth.router)
 app.include_router(court.router)
 app.include_router(schedule.router)
