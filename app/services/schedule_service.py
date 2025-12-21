@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated
 from fastapi import Depends, HTTPException, Path
-from services.auth_service import AuthService
+from app.modules.auth.service import AuthService
 from dependencies import db_dependency
 from schemas.schedule import ScheduleCreate
 from starlette import status

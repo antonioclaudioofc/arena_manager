@@ -13,20 +13,24 @@ class AdminService:
             raise AdminOnlyException()
 
     @staticmethod
-    def create_court(user: dict, db, court_request):
+    def create_court(user: dict, court_request, db):
         AdminService._ensure_admin(user)
 
-        court_model = Courts(**court_request.model_dump(),
-                             owner_id=user["id"],
-                             created_at=datetime.now(datetime.timezone.utc))
+        court_model = Courts(
+            **court_request.model_dump(),
+            owner_id=user["id"],
+            created_at=datetime.now(timezone.utc)
+        )
 
-        return AdminRepository.create(db, court_model)
+        return AdminRepository.create(court_model, db)
+    
+
 
     @staticmethod
-    def delete_user(user: dict, db, user_id: int):
+    def delete_user(user: dict, user_id: int, db):
         AdminService._ensure_admin(user)
 
-        user_model = AdminRepository.get_user_by_id(db, user_id)
+        user_model = AdminRepository.get_user_by_id(user_id, db)
         if not user_model:
             raise NotFoundException("Usuário não encontrado!")
 

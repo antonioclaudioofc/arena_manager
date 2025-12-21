@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, Path
 from dependencies import db_dependency
 from typing import Annotated
 from starlette import status
-from services.auth_service import AuthService
+from app.modules.auth.service import AuthService
 from services.reservation_service import ReservationService
 
 router = APIRouter(

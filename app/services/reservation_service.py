@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated
 from fastapi import Depends, Path, HTTPException, Query
-from services.auth_service import AuthService
+from app.modules.auth.service import AuthService
 from dependencies import db_dependency
 from models.reservation import Reservations
 from starlette import status

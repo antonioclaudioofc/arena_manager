@@ -3,7 +3,7 @@ from dependencies import db_dependency
 from starlette import status
 from services.schedule_service import ScheduleService
 from typing import Annotated
-from services.auth_service import AuthService
+from app.modules.auth.service import AuthService
 from dependencies import db_dependency
 from schemas.schedule import ScheduleCreate
 
