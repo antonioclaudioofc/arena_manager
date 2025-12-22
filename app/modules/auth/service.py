@@ -1,3 +1,4 @@
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from modules.auth.repository import AuthRepository
@@ -6,6 +7,7 @@ from shared.exceptions import UnathorizedException
 from models.auth import Users
 from core.security import bcrypt_context, hash_password
 from datetime import datetime, timedelta, timezone
+from .secutiry import oauth2_bearer
 
 
 class AuthService:
@@ -50,7 +52,7 @@ class AuthService:
         return AuthRepository.create(user_model, db)
 
     @staticmethod
-    def get_current_user(token: str):
+    def get_current_user(token: str = Depends(oauth2_bearer)):
         try:
             payload = decode_token(token)
             return {

@@ -1,6 +1,6 @@
 from typing import Annotated
 from modules.auth.service import AuthService
-from secutiry import oauth2_bearer
+from .secutiry import oauth2_bearer
 from fastapi import Depends
 
 

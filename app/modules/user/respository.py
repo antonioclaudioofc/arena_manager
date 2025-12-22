@@ -8,8 +8,6 @@ class UserRepository:
         return db.query(Users).filter(Users.id == user_id).first()
 
     @staticmethod
-    def delete(user_id: int, db):
-        user_model = db.query(Users.id == user_id).first()
-
-        if user_model:
-            db.delete(user_model)
+    def delete(user_model, db):
+        db.delete(user_model)
+        db.commit()

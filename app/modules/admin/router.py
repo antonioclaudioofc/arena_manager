@@ -14,15 +14,22 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.post(
-    "/courts",
-    status_code=status.HTTP_201_CREATED
-)
+@router.post("/courts", status_code=status.HTTP_201_CREATED)
 def create_court(
     user: user_dependency,
-    court_request: CourtCreate,  db: db_dependency
+    court_request: CourtCreate,
+    db: db_dependency
 ):
     AdminService.create_court(user, court_request, db)
+
+
+@router.delete("/courts/{court_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_court(
+    user: user_dependency,
+    db: db_dependency,
+    court_id: int = Path(gt=0)
+):
+    AdminService.delete_court(user, db, court_id)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
