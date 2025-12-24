@@ -1,3 +1,5 @@
+from models.court import Courts
+from models.schedule import Schedules
 from models.reservation import Reservations
 
 
@@ -10,6 +12,14 @@ class ReservationRepository:
     @staticmethod
     def get_by_id(db, reservation_id: int):
         return db.query(Reservations).filter(Reservations.id == reservation_id).first()
+
+    @staticmethod
+    def get_by_user(user_id: int, db):
+        return (
+            db.query(Reservations)
+            .filter(Reservations.owner_id == user_id)
+            .all()
+        )
 
     @staticmethod
     def get_by_owner(owner_id: id, db, reservation_id: int):

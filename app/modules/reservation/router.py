@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, Path
+from schemas.reservation import ReservationCreate
 from modules.auth.service import AuthService
 from modules.reservation.service import ReservationService
 from dependencies import db_dependency
@@ -11,6 +12,14 @@ router = APIRouter(
 )
 
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
+
+
+@router.get("/me", response_model=list[ReservationCreate],  status_code=status.HTTP_200_OK)
+def my_reservations(
+    user: user_dependency,
+    db: db_dependency
+):
+    return ReservationService.list_my_reservations(user, db)
 
 
 @router.get("/", status_code=status.HTTP_200_OK)

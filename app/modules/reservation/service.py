@@ -7,6 +7,13 @@ from shared.exceptions import NotFoundException, UnathorizedException
 class ReservationService:
 
     @staticmethod
+    def list_my_reservations(user: dict, db):
+        if not user:
+            raise UnathorizedException("Usuário não autenticado")
+
+        return ReservationRepository.get_by_user(user["id"], db)
+
+    @staticmethod
     def list_all(db):
         return ReservationRepository.get_all(db)
 

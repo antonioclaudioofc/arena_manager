@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from core.database import Base
+from sqlalchemy.orm import relationship
 
 
 class Reservations(Base):
@@ -12,3 +13,5 @@ class Reservations(Base):
 
     created_at = Column(String)
     updated_at = Column(String)
+
+    schedule = relationship("Schedules", back_populates="reservations")

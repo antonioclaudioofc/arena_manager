@@ -1,6 +1,6 @@
 from core.database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-
+from sqlalchemy.orm import relationship
 
 class Schedules(Base):
     __tablename__ = "schedules"
@@ -15,3 +15,10 @@ class Schedules(Base):
     
     created_at = Column(String)
     updated_at = Column(String)
+
+    court = relationship("Courts", back_populates="schedules")
+    reservations = relationship(
+        "Reservations",
+        back_populates="schedule",
+        cascade="all, delete"
+    )
