@@ -28,10 +28,9 @@ def create_court(
 def create_schedule(
         user: user_dependency,
         schedule_request: ScheduleCreate,
-        db: db_dependency,
-        court_id: int = Query(gt=0)
+        db: db_dependency
 ):
-    AdminService.create_schedule(user, schedule_request, db, court_id)
+    AdminService.create_schedule(user, schedule_request, db)
 
 
 @router.delete("/courts/{court_id}", status_code=status.HTTP_204_NO_CONTENT)

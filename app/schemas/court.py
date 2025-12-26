@@ -1,9 +1,18 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class CourtCreate(BaseModel):
-    name: str = Field(min_length=6)
-    sports_type: str = Field(min_length=3)
-    description: str = Field(min_length=6)
+    name: str
+    sports_type: str
+    description: str
 
-    model_config = {"from_attributes": True}
+
+class CourtResponse(BaseModel):
+    id: int
+    name: str
+    sports_type: str
+    description: str
+    created_at: str
+    updated_at: str | None
+
+    model_config = ConfigDict(from_attributes=True)

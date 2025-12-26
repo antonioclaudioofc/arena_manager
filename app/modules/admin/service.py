@@ -51,12 +51,11 @@ class AdminService:
         UserRepository.delete(user_model, db)
 
     @staticmethod
-    def create_schedule(user: dict, schedule_request, db, court_id: int):
+    def create_schedule(user: dict, schedule_request, db):
         AdminService._ensure_admin(user)
 
         schedule_model = Schedules(
             **schedule_request.model_dump(),
-            court_id=court_id,
             owner_id=user["id"],
             created_at=datetime.now(timezone.utc)
         )
