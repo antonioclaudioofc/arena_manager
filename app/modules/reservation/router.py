@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, Path
-from schemas.reservation import ReservationCreate
+from schemas.reservation import ReservationResponse
 from modules.auth.service import AuthService
 from modules.reservation.service import ReservationService
 from dependencies import db_dependency
@@ -14,7 +14,7 @@ router = APIRouter(
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
 
 
-@router.get("/me", response_model=list[ReservationCreate],  status_code=status.HTTP_200_OK)
+@router.get("/me", response_model=list[ReservationResponse],  status_code=status.HTTP_200_OK)
 def my_reservations(
     user: user_dependency,
     db: db_dependency
@@ -22,14 +22,14 @@ def my_reservations(
     return ReservationService.list_my_reservations(user, db)
 
 
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", response_model=list[ReservationResponse], status_code=status.HTTP_200_OK)
 def list_reservations(
     db: db_dependency
 ):
     return ReservationService.list_all(db)
 
 
-@router.get("/{reservation_id}", status_code=status.HTTP_200_OK)
+@router.get("/{reservation_id}", response_model=ReservationResponse, status_code=status.HTTP_200_OK)
 def get_reservation(
     db: db_dependency,
     reservation_id: int = Path(gt=0)

@@ -16,13 +16,13 @@ class UserVerification(BaseModel):
 
 
 class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     email: str
     username: str
     first_name: str
     last_name: str
     role: str
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: str
+    updated_at: str | None
+
+    model_config = ConfigDict(from_attributes=True)

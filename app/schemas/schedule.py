@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from schemas.court import CourtCreate
+from schemas.court import CourtResponse
 
 
 class ScheduleCreate(BaseModel):
@@ -16,8 +16,8 @@ class ScheduleResponse(BaseModel):
     start_time: str
     end_time: str
     available: bool
-    court: CourtCreate
+    court: CourtResponse
     created_at: str
-    updated_at: str | None  
+    updated_at: str | None
 
     model_config = ConfigDict(from_attributes=True)

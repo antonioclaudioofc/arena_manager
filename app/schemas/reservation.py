@@ -1,16 +1,33 @@
 from pydantic import BaseModel, ConfigDict
-from schemas.schedule import ScheduleCreate
+from schemas.auth import UserResponse
+from schemas.schedule import ScheduleResponse
 
 
 class ReservationCreate(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
     status: str
     schedule_id: int
     owner_id: int
-    created_at: str | None = None
-    updated_at: str | None = None
-    schedule: ScheduleCreate
 
-    model_config = {"from_attributes": True}
+    created_at: str
+    updated_at: str | None
+
+
+class ReservationResponse(BaseModel):
+    id: int
+    status: str
+    schedule: ScheduleResponse
+    created_at: str
+    updated_at: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReservationResponseAdmin(BaseModel):
+    id: int
+    status: str
+    schedule: ScheduleResponse
+    user: UserResponse
+    created_at: str
+    updated_at: str | None
+
+    model_config = ConfigDict(from_attributes=True)

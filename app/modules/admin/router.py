@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, Path, Query
+from schemas.auth import UserResponse
+from schemas.reservation import ReservationResponseAdmin
 from schemas.schedule import ScheduleCreate
 from dependencies import db_dependency
 from starlette import status
@@ -13,6 +15,22 @@ router = APIRouter(
 )
 
 user_dependency = Annotated[dict, Depends(AuthService.get_current_user)]
+
+
+@router.get("/reservations", response_model=list[ReservationResponseAdmin], status_code=status.HTTP_200_OK)
+def list_reservations(
+    user: user_dependency,
+    db: db_dependency
+):
+    return AdminService.list_reservations(user, db)
+
+
+@router.get("/users", response_model=list[UserResponse], status_code=status.HTTP_200_OK)
+def list_users(
+    user: user_dependency,
+    db: db_dependency
+):
+    return AdminService.list_users(user, db)
 
 
 @router.post("/courts", status_code=status.HTTP_201_CREATED)

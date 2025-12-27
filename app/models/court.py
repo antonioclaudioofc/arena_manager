@@ -2,6 +2,7 @@ from core.database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
+
 class Courts(Base):
     __tablename__ = "courts"
 
@@ -14,8 +15,4 @@ class Courts(Base):
     created_at = Column(String)
     updated_at = Column(String)
 
-    schedules = relationship(
-        "Schedules",
-        back_populates="court",
-        cascade="all, delete"
-    )
+    schedules = relationship("Schedules", back_populates="court")

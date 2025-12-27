@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-
 from fastapi import Depends
+from modules.admin.repository import AdminRepository
 from modules.schedule.repository import ScheduleRepository
 from models.schedule import Schedules
 from modules.user.respository import UserRepository
@@ -71,3 +71,13 @@ class AdminService:
             raise NotFoundException("Horário não encontrado")
 
         ScheduleRepository.delete(schedule_model, db)
+
+    @staticmethod
+    def list_reservations(user: dict, db):
+        AdminService._ensure_admin(user)
+        return AdminRepository.list_all_reservations(db)
+
+    @staticmethod
+    def list_users(user: dict, db):
+        AdminService._ensure_admin(user)
+        return AdminRepository.list_all_users(db)

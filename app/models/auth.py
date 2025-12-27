@@ -1,5 +1,6 @@
 from core.database import Base
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 
 
 class Users(Base):
@@ -15,3 +16,9 @@ class Users(Base):
 
     created_at = Column(String)
     updated_at = Column(String)
+
+    reservations = relationship(
+        "Reservations",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

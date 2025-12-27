@@ -15,3 +15,4 @@ class Reservations(Base):
     updated_at = Column(String)
 
     schedule = relationship("Schedules", back_populates="reservations")
+    user = relationship("Users", back_populates="reservations")
