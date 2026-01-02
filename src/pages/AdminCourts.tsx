@@ -143,61 +143,65 @@ export default function AdminCourts() {
         </DialogContent>
       </Dialog>
 
-      <div className="bg-white rounded-lg shadow overflow-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nome
-              </th>
-              <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tipo de Esporte
-              </th>
-              <th className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Descrição
-              </th>
-              <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ações
-              </th>
-            </tr>
-          </thead>
-
-          <tbody className="bg-white divide-y divide-gray-200">
-            {courts.map((court) => (
-              <tr key={court.id}>
-                <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium text-gray-900 break-words">
-                  {court.name}
-                </td>
-
-                <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words">
-                  {court.sports_type}
-                </td>
-
-                <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words line-clamp-2">
-                  {court.description}
-                </td>
-
-                <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleEdit(court)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(court.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                </td>
+      {loading ? (
+        "Carregando arenas"
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nome
+                </th>
+                <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo de Esporte
+                </th>
+                <th className="px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Descrição
+                </th>
+                <th className=" px-3 sm:px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+
+            <tbody className="bg-white divide-y divide-gray-200">
+              {courts.map((court) => (
+                <tr key={court.id}>
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium text-gray-900 break-words">
+                    {court.name}
+                  </td>
+
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words">
+                    {court.sports_type}
+                  </td>
+
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words line-clamp-2">
+                    {court.description}
+                  </td>
+
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleEdit(court)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(court.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
