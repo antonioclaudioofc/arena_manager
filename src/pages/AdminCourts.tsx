@@ -35,7 +35,7 @@ const sports = ["FutVôlei", "Vôlei", "Beach tennis"];
 const courtsFormSchema = z.object({
   name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
   sports: z.array(z.string()).min(1, "Selecione pelo menos um esporte"),
-  description: z.string().min(5, "Descrição deve ter no mínimo 5 caracteres"),
+  description: z.string().optional(),
 });
 
 interface Court {
@@ -63,11 +63,14 @@ export default function AdminCourts() {
       setLoading(true);
       const response = await fetch(`${API_BASE}/courts`);
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao buscar quadras");
+        toast.error(data.message || "Erro ao buscar Quadras");
+
+        return;
       }
 
-      const data = await response.json();
       setCourts(data);
     } catch (err) {
       console.error("Erro ao buscar quadras:", err);
@@ -96,11 +99,15 @@ export default function AdminCourts() {
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao excluir quadra");
+        toast.error(data.message || "Erro ao deletar quadra");
+
+        return;
       }
 
-      toast.success("Quadra excluída com sucesso!");
+      toast.success(data.message || "Quadra excluída com sucesso!");
       fetchCourts();
       setDeleteDialogOpen(false);
       setCourtToDelete(null);
@@ -128,7 +135,13 @@ export default function AdminCourts() {
     <div className="p-6">
       <div className="flex flex-wrap gap-3 justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Gerenciar Quadras</h1>
-        <Button onClick={() => setDialogOpen(true)} className="w-max">
+        <Button
+          onClick={() => {
+            setEditingCourt(null);
+            setDialogOpen(true);
+          }}
+          className="w-max"
+        >
           + Nova Quadra
         </Button>
       </div>
@@ -168,15 +181,15 @@ export default function AdminCourts() {
             <tbody className="bg-white divide-y divide-gray-200">
               {courts.map((court) => (
                 <tr key={court.id}>
-                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium text-gray-900 break-words">
-                    {court.name}
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm font-medium text-gray-900 ">
+                    {court.name.toLocaleUpperCase()}
                   </td>
 
-                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words">
-                    {court.sports_type}
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 ">
+                    {court.sports_type.toLocaleUpperCase()}
                   </td>
 
-                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500 break-words line-clamp-2">
+                  <td className="px-3 sm:px-4 lg:px-6 py-4 text-sm text-gray-500  line-clamp-2">
                     {court.description}
                   </td>
 
@@ -184,13 +197,13 @@ export default function AdminCourts() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => handleEdit(court)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-600 hover:text-blue-900 cursor-pointer transition-colors"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => handleDeleteClick(court.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 cursor-pointer transition-colors"
                       >
                         Excluir
                       </button>
@@ -291,8 +304,8 @@ function FormCourt({
       };
 
       const url = editingCourt
-        ? `${API_BASE}/admin/${editingCourt.id}`
-        : `${API_BASE}/admin/courts`;
+        ? `${API_BASE}/admin/courts/${editingCourt.id}`
+        : `${API_BASE}/admin/courts/`;
 
       const method = editingCourt ? "PUT" : "POST";
 
@@ -305,16 +318,20 @@ function FormCourt({
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(
-          error.detail ||
+        toast.error(
+          data.message ||
             `Erro ao ${editingCourt ? "atualizar" : "adicionar"} quadra`
         );
+
+        return;
       }
 
       toast.success(
-        `Quadra ${editingCourt ? "atualizada" : "adicionada"} com sucesso!`
+        data.message ||
+          `Quadra ${editingCourt ? "atualizada" : "adicionada"} com sucesso!`
       );
       setDialogOpen();
       form.reset();

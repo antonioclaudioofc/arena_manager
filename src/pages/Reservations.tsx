@@ -55,11 +55,13 @@ export default function Reservations() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao buscar reservas");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Erro ao buscar reservas");
+
+        return;
+      }
 
       setReservations(data);
     } catch (err) {
@@ -83,11 +85,15 @@ export default function Reservations() {
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao cancelar reserva");
+        toast.error(data.message || "Erro ao cancelar reserva");
+
+        return;
       }
 
-      toast.success("Reserva cancelada com sucesso!");
+      toast.success(data.message || "Reserva cancelada com sucesso!");
       setDeleteDialogOpen(false);
       setReservationToDelete(null);
       fetchReservations();
@@ -113,7 +119,9 @@ export default function Reservations() {
             </button>
             <img src={logo} alt="Logo" className="h-12" />
           </div>
-          <h1 className="text-2xl font-bold text-white max-md:text-lg">Minhas Reservas</h1>
+          <h1 className="text-2xl font-bold text-white max-md:text-lg">
+            Minhas Reservas
+          </h1>
         </div>
       </div>
 

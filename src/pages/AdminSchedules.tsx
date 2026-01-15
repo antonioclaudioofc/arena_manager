@@ -78,9 +78,15 @@ export default function AdminSchedules() {
 
   const fetchCourts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/courts`);
-      if (!response.ok) throw new Error("Erro ao buscar quadras");
+      const response = await fetch(`${API_BASE}/courts/`);
       const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Erro ao buscar quadras");
+
+        return;
+      }
+
       setCourts(data);
     } catch (err) {
       console.error("Erro ao buscar quadras:", err);
@@ -91,17 +97,20 @@ export default function AdminSchedules() {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/schedules`, {
+      const response = await fetch(`${API_BASE}/schedules/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao buscar horários");
+        toast.error(data.message || "Erro ao buscar Horários");
+
+        return;
       }
 
-      const data = await response.json();
       setSchedules(data);
     } catch (err) {
       console.error("Erro ao buscar horários:", err);
@@ -130,11 +139,15 @@ export default function AdminSchedules() {
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao excluir horário");
+        toast.error(data.message || "Erro ao excluir Horário");
+
+        return;
       }
 
-      toast.success("Horário excluído com sucesso!");
+      toast.success(data.message || "Horário excluído com sucesso!");
       fetchSchedules();
       setDeleteDialogOpen(false);
       setScheduleToDelete(null);
@@ -233,7 +246,8 @@ export default function AdminSchedules() {
                 return (
                   <tr key={schedule.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {schedule.court.name ?? `Quadra ${schedule.court.name}`}
+                      {schedule.court.name.toUpperCase() ??
+                        `Quadra ${schedule.court.name}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {dayjs(schedule.date).format("DD/MM/YYYY")}
@@ -246,7 +260,7 @@ export default function AdminSchedules() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs ${
+                        className={`px-2 py-1 rounded-full text-xs  ${
                           schedule.available
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
@@ -258,13 +272,13 @@ export default function AdminSchedules() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
                         onClick={() => handleEdit(schedule)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        className="text-blue-600 hover:text-blue-900 mr-4 cursor-pointer transition-color"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => handleDeleteClick(schedule.id)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 cursor-pointer transition-color"
                       >
                         Excluir
                       </button>
@@ -370,7 +384,7 @@ function FormSchedule({
 
       const url = editingSchedule
         ? `${API_BASE}/admin/schedules/${editingSchedule.id}`
-        : `${API_BASE}/admin/schedules`;
+        : `${API_BASE}/admin/schedules/`;
 
       const method = editingSchedule ? "PUT" : "POST";
 
@@ -383,15 +397,18 @@ function FormSchedule({
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Erro ao salvar horário");
+        toast.error(data.message || "Erro ao salvar horário");
+
+        return;
       }
 
       toast.success(
         editingSchedule
-          ? "Horário atualizado com sucesso!"
-          : "Horário adicionado com sucesso!"
+          ? data.message || "Horário atualizado com sucesso!"
+          : data.message || "Horário adicionado com sucesso!"
       );
 
       onSuccess();

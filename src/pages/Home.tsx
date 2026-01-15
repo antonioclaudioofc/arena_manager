@@ -20,7 +20,6 @@ export default function Home() {
 
   const API_BASE = import.meta.env.VITE_API_BASE;
 
-  // Busca reservas do usuário logado
   const fetchReservedSchedules = useCallback(async () => {
     if (!token) {
       setReservedScheduleIds([]);
@@ -48,7 +47,6 @@ export default function Home() {
     }
   }, [token, API_BASE]);
 
-  // Busca todos os horários
   const fetchSchedules = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/schedules/`);
@@ -61,7 +59,6 @@ export default function Home() {
     }
   }, [API_BASE]);
 
-  // Busca quadras e inicializa dados
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,7 +78,6 @@ export default function Home() {
     fetchData();
   }, [fetchSchedules, fetchReservedSchedules, API_BASE]);
 
-  // Datas dos próximos 7 dias
   const datePills = useMemo(() => {
     const base = dayjs().startOf("day");
 
@@ -94,7 +90,6 @@ export default function Home() {
     });
   }, []);
 
-  // Mapeamento de horários por quadra, filtrando por disponibilidade e reservas
   const scheduleMap = useMemo(() => {
     const map: Record<number, any[]> = {};
     const selectedIso = datePills[selectedDateIndex]?.iso;
@@ -117,7 +112,6 @@ export default function Home() {
     return map;
   }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
 
-  // Renderiza loading enquanto o usuário é carregado
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -128,7 +122,6 @@ export default function Home() {
 
   return (
     <section className="p-6">
-      {/* Cabeçalho */}
       <div className="bg-white rounded-md shadow p-6 mb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -138,7 +131,6 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Botão admin só aparece se user for admin */}
           {user?.role === "admin" && (
             <button
               onClick={() => navigate("/admin")}
@@ -150,13 +142,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* Datas dos próximos 7 dias */}
         <div className="mt-6 flex justify-center gap-3 overflow-x-auto flex-wrap">
           {datePills.map((d, i) => (
             <button
               key={d.iso}
               onClick={() => setSelectedDateIndex(i)}
-              className={`w-16 h-16 rounded-full border flex flex-col items-center justify-center transition ${
+              className={`w-16 h-16 rounded-full border flex flex-col items-center justify-center transition cursor-pointer hover:bg-gray-300 ${
                 i === selectedDateIndex
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700"
@@ -173,7 +164,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Lista de quadras */}
       <div className="space-y-6">
         <CourtList
           courts={courts}

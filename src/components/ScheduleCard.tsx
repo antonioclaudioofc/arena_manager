@@ -38,22 +38,25 @@ export default function ScheduleCard({
 
     try {
       setIsLoading(true);
-      const response = await fetch(
-        `${API_BASE}/reservations/?schedule_id=${schedule.id}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE}/reservations/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          schedule_id: schedule.id,
+        }),
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Erro ao fazer reserva");
+        toast.error(data.message || "Erro ao fazer reserva");
+
+        return;
       }
 
-      toast.success("Reserva realizada com sucesso!");
+      toast.success(data.message || "Reserva realizada com sucesso!");
       setDialogOpen(false);
       onReservationSuccess?.();
     } catch (err: any) {

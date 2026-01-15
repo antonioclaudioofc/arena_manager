@@ -50,17 +50,20 @@ export default function AdminReservations() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_BASE}/admin/reservations`, {
+      const response = await fetch(`${API_BASE}/admin/reservations`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!res.ok) {
-        throw new Error("Erro ao buscar reservas");
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Erro ao buscar reservas");
+
+        return;
       }
 
-      const data = await res.json();
       setReservations(data);
     } catch (err) {
       console.error(err);
@@ -79,7 +82,7 @@ export default function AdminReservations() {
     if (!reservationToDelete) return;
 
     try {
-      const res = await fetch(
+      const response = await fetch(
         `${API_BASE}/reservations/${reservationToDelete}`,
         {
           method: "DELETE",
@@ -89,11 +92,15 @@ export default function AdminReservations() {
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Erro ao excluir reserva");
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Erro ao excluir reserva");
+
+        return;
       }
 
-      toast.success("Reserva excluída com sucesso!");
+      toast.success(data.message || "Reserva excluída com sucesso!");
       setDeleteDialogOpen(false);
       setReservationToDelete(null);
       fetchReservations();

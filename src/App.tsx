@@ -38,7 +38,7 @@ export default function App() {
             </h1>
           </div>
 
-          {auth.user?.id ? (
+          {auth.user ? (
             <div className="relative">
               <button
                 onClick={() => setOpen((v) => !v)}
@@ -55,7 +55,9 @@ export default function App() {
                   <h5 className="font-medium text-white">
                     {auth.user.first_name}
                   </h5>
-                  <p className="text-xs text-gray-300  max-md:hidden">{auth.user.email}</p>
+                  <p className="text-xs text-gray-300  max-md:hidden">
+                    {auth.user.email}
+                  </p>
                 </div>
 
                 <ChevronDown
