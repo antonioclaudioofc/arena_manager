@@ -15,11 +15,12 @@ export default function Home() {
   const [reservedScheduleIds, setReservedScheduleIds] = useState<number[]>([]);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
 
-  const { token, user } = useContext(AuthContext);
+  const { token, user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const API_BASE = import.meta.env.VITE_API_BASE;
 
+  // Busca reservas do usuário logado
   const fetchReservedSchedules = useCallback(async () => {
     if (!token) {
       setReservedScheduleIds([]);
@@ -39,41 +40,35 @@ export default function Home() {
       }
 
       const reservations = await response.json();
-
       const ids = reservations.map((r: any) => r.schedule?.id).filter(Boolean);
-
-      console.log("🧩 Reserved schedule IDs:", ids);
-
       setReservedScheduleIds(ids);
     } catch (err) {
-      console.error("❌ Erro ao buscar reservas:", err);
+      console.error("Erro ao buscar reservas:", err);
       setReservedScheduleIds([]);
     }
   }, [token, API_BASE]);
 
+  // Busca todos os horários
   const fetchSchedules = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE}/schedules/`);
-
       if (!response.ok) throw new Error("Erro ao buscar horários");
 
       const data = await response.json();
-
       setSchedules(data);
     } catch (err) {
       toast.error("Erro ao carregar horários");
     }
   }, [API_BASE]);
 
+  // Busca quadras e inicializa dados
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(`${API_BASE}/courts/`);
-
         if (!response.ok) throw new Error("Erro ao buscar quadras");
 
         const data = await response.json();
-
         setCourts(data);
 
         await fetchSchedules();
@@ -86,6 +81,7 @@ export default function Home() {
     fetchData();
   }, [fetchSchedules, fetchReservedSchedules, API_BASE]);
 
+  // Datas dos próximos 7 dias
   const datePills = useMemo(() => {
     const base = dayjs().startOf("day");
 
@@ -98,6 +94,7 @@ export default function Home() {
     });
   }, []);
 
+  // Mapeamento de horários por quadra, filtrando por disponibilidade e reservas
   const scheduleMap = useMemo(() => {
     const map: Record<number, any[]> = {};
     const selectedIso = datePills[selectedDateIndex]?.iso;
@@ -105,21 +102,13 @@ export default function Home() {
     if (!selectedIso) return map;
 
     schedules.forEach((s) => {
-      if (s.date !== selectedIso) {
-        return;
-      }
+      if (s.date !== selectedIso) return;
 
       const isAvailable = s.available && !reservedScheduleIds.includes(s.id);
-
-      if (!isAvailable) {
-        return;
-      }
+      if (!isAvailable) return;
 
       const courtId = s.court?.id ?? s.court_id;
-
-      if (!courtId) {
-        return;
-      }
+      if (!courtId) return;
 
       map[courtId] = map[courtId] || [];
       map[courtId].push(s);
@@ -128,8 +117,18 @@ export default function Home() {
     return map;
   }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
 
+  // Renderiza loading enquanto o usuário é carregado
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Carregando...
+      </div>
+    );
+  }
+
   return (
-    <section>
+    <section className="p-6">
+      {/* Cabeçalho */}
       <div className="bg-white rounded-md shadow p-6 mb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -139,6 +138,7 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Botão admin só aparece se user for admin */}
           {user?.role === "admin" && (
             <button
               onClick={() => navigate("/admin")}
@@ -150,6 +150,7 @@ export default function Home() {
           )}
         </div>
 
+        {/* Datas dos próximos 7 dias */}
         <div className="mt-6 flex justify-center gap-3 overflow-x-auto flex-wrap">
           {datePills.map((d, i) => (
             <button
@@ -172,6 +173,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Lista de quadras */}
       <div className="space-y-6">
         <CourtList
           courts={courts}

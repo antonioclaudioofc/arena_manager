@@ -49,7 +49,7 @@ export default function Login() {
       body.append("username", username);
       body.append("password", password);
 
-      const response = await fetch(`${API_BASE}/auth/token`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: body.toString(),
@@ -58,7 +58,8 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.detail || "Erro ao entrar");
+        toast.error(data.message || "Erro ao entrar");
+
         return;
       }
 
@@ -154,7 +155,7 @@ export default function Login() {
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => handleDemoLogin("arena", "123456")}
+              onClick={() => handleDemoLogin("arenamanager", "123456")}
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
             >

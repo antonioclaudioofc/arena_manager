@@ -1,10 +1,10 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
-import { jwtVerify } from "jose";
 
 interface UserProfile {
-  id: number;
-  first_name: string;
   email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
   role: string;
 }
 
@@ -24,8 +24,6 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
-const SECRET = new TextEncoder().encode(import.meta.env.VITE_SECRET_KEY);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("access_token")
@@ -35,25 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const API_BASE = import.meta.env.VITE_API_BASE;
 
-  const validateToken = async (t: string) => {
-    try {
-      await jwtVerify(t, SECRET);
-      return true;
-    } catch (err) {
-      console.error("Token inválido:", err);
-      return false;
-    }
-  };
-
   const fetchUserProfile = async (t: string) => {
     try {
-      const res = await fetch(`${API_BASE}/user/`, {
+      const res = await fetch(`${API_BASE}/user/me/`, {
         headers: { Authorization: `Bearer ${t}` },
       });
 
-      if (!res.ok) throw new Error("Erro ao buscar perfil");
+      if (!res.ok) {
+        throw new Error("Token inválido ou expirado");
+      }
 
-      const profile = await res.json();
+      const profile: UserProfile = await res.json();
       setUser(profile);
     } catch (err) {
       console.error("Erro ao carregar perfil:", err);
@@ -62,16 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     const init = async () => {
-      const valid = await validateToken(token);
-
-      if (!valid) {
-        logout();
+      if (!token) {
         setLoading(false);
         return;
       }

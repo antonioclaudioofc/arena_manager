@@ -23,22 +23,15 @@ import { useNavigate } from "react-router";
 
 const formSchema = z
   .object({
-    email: z.string().min(2, {
-      message: "Campo obrigatório",
-    }),
-    username: z.string().min(2, {
-      message: "Campo obrigatório",
-    }),
-    first_name: z.string().min(2, {
-      message: "Campo obrigatório",
-    }),
-    last_name: z.string().min(2, { message: "Campo obrigatório" }),
-    password: z.string().min(6, {
-      message: "A senha deve ter no mínimo 6 caracteres",
-    }),
-    confirm_password: z.string().min(6, {
-      message: "A confirmação de senha deve ter no mínimo 6 caracteres",
-    }),
+    email: z.email("E-mail inválido"),
+    username: z.string().min(2, "Campo obrigatório"),
+    first_name: z.string().min(2, "Campo obrigatório"),
+    last_name: z.string().min(2, "Campo obrigatório"),
+    password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+    confirm_password: z
+      .string()
+      .min(6, "A confirmação de senha deve ter no mínimo 6 caracteres"),
+    role: z.enum(["client", "admin"]).optional(),
   })
   .refine((data) => data.password === data.confirm_password, {
     path: ["confirm_password"],
@@ -68,6 +61,7 @@ export default function Register() {
       last_name: "",
       password: "",
       confirm_password: "",
+      role: "client",
     },
   });
 
@@ -76,17 +70,21 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const { confirm_password, ...rest } = values as any;
-      const payload = { ...rest, role: "user" };
+      const { confirm_password, ...rest } = values;
+      const payload = { ...rest };
 
-      const res = await fetch(`${API_BASE}/auth/`, {
+      const response = await fetch(`${API_BASE}/auth/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error("Erro ao registrar");
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || "Erro ao registar");
+
+        return;
       }
 
       try {
@@ -94,19 +92,21 @@ export default function Register() {
         loginBody.append("username", rest.username || "");
         loginBody.append("password", rest.password || "");
 
-        const tokenRes = await fetch(`${API_BASE}/auth/token`, {
+        const tokenResponse = await fetch(`${API_BASE}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: loginBody.toString(),
         });
 
-        if (!tokenRes.ok) {
+        const tokenData = await tokenResponse.json();
+
+        if (!tokenResponse.ok) {
           toast.success("Conta criada. Por favor faça login.");
           navigate("/login");
+
           return;
         }
 
-        const tokenData = await tokenRes.json();
         if (tokenData?.access_token) {
           try {
             auth.login(tokenData.access_token);
@@ -124,7 +124,7 @@ export default function Register() {
       }
     } catch (err: any) {
       console.error(err);
-      toast.error("Erro no registro");
+      toast.error(err);
     } finally {
       setLoading(false);
     }
