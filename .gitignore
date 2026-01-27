@@ -25,3 +25,4 @@ dist-ssr
 
 .env.example
 .env
+API_DOCUMENTATION.md

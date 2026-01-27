@@ -1,9 +1,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
-  Users,
-  ClipboardList,
-  Settings,
+  Building2,
   Trophy,
   LogOut,
 } from "lucide-react";
@@ -21,40 +19,30 @@ import {
   SidebarMenuItem,
 } from "./Sidebar";
 
-const adminItems = [
+const ownerItems = [
   {
     title: "Dashboard",
-    url: "/admin",
+    url: "/owner",
     icon: LayoutDashboard,
   },
   {
+    title: "Minhas Arenas",
+    url: "/owner/arenas",
+    icon: Building2,
+  },
+  {
     title: "Quadras",
-    url: "/admin/courts",
+    url: "/owner/courts",
     icon: Trophy,
   },
   {
     title: "Horários",
-    url: "/admin/schedules",
+    url: "/owner/schedules",
     icon: CalendarDays,
-  },
-  {
-    title: "Reservas",
-    url: "/admin/reservations",
-    icon: ClipboardList,
-  },
-  {
-    title: "Usuários",
-    url: "/admin/users",
-    icon: Users,
-  },
-  {
-    title: "Configurações",
-    url: "/admin/config",
-    icon: Settings,
   },
 ];
 
-export function AppSidebar() {
+export function OwnerSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useContext(AuthContext);
@@ -72,12 +60,13 @@ export function AppSidebar() {
           <h2 className="text-lg font-bold text-green-800 text-center">
             Arena Manager
           </h2>
+          <p className="text-xs text-gray-600 mt-1">Painel do Proprietário</p>
         </div>
 
         <SidebarGroup className="pt-4">
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2 px-3">
-              {adminItems.map((item) => {
+              {ownerItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>

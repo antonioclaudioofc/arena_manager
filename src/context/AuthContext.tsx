@@ -3,9 +3,8 @@ import { createContext, useState, useEffect, type ReactNode } from "react";
 interface UserProfile {
   email: string;
   username: string;
-  first_name: string;
-  last_name: string;
-  role: string;
+  name: string;
+  role: "admin" | "owner" | "client";
 }
 
 interface AuthContextType {

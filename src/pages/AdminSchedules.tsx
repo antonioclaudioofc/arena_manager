@@ -39,7 +39,6 @@ const scheduleFormSchema = z.object({
   date: z.string().min(1, "Data é obrigatória"),
   start_time: z.string().min(1, "Horário inicial é obrigatório"),
   end_time: z.string().min(1, "Horário final é obrigatório"),
-  available: z.boolean().default(true),
 });
 
 interface Schedule {
@@ -47,7 +46,6 @@ interface Schedule {
   date: string;
   start_time: string;
   end_time: string;
-  available: boolean;
   court: {
     id: number;
     name: string;
@@ -218,9 +216,6 @@ export default function AdminSchedules() {
                 Horário Fim
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ações
               </th>
             </tr>
@@ -257,17 +252,6 @@ export default function AdminSchedules() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {schedule.end_time}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs  ${
-                          schedule.available
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {schedule.available ? "Disponível" : "Indisponível"}
-                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -346,7 +330,6 @@ function FormSchedule({
       date: editingSchedule?.date || "",
       start_time: editingSchedule?.start_time || "",
       end_time: editingSchedule?.end_time || "",
-      available: editingSchedule?.available ?? true,
     },
   } as any);
 
@@ -357,7 +340,6 @@ function FormSchedule({
         date: editingSchedule.date,
         start_time: editingSchedule.start_time,
         end_time: editingSchedule.end_time,
-        available: editingSchedule.available,
       });
     } else {
       form.reset({
@@ -365,7 +347,6 @@ function FormSchedule({
         date: "",
         start_time: "",
         end_time: "",
-        available: true,
       });
     }
   }, [editingSchedule]);
@@ -378,7 +359,6 @@ function FormSchedule({
         date: values.date,
         start_time: values.start_time,
         end_time: values.end_time,
-        available: values.available,
         court_id: Number(values.court_id),
       };
 
@@ -497,31 +477,6 @@ function FormSchedule({
             )}
           />
         </div>
-
-        <FormField
-          control={form.control}
-          name="available"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select
-                onValueChange={(value) => field.onChange(value === "true")}
-                value={field.value.toString()}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="true">Disponível</SelectItem>
-                  <SelectItem value="false">Indisponível</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex flex-wrap justify-end gap-3 pt-4">
           <Button

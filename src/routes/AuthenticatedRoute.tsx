@@ -3,7 +3,7 @@ import { Navigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 import { Loader2 } from "lucide-react";
 
-export default function AdminRoute({ children }: { children: ReactNode }) {
+export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, token, loading } = useContext(AuthContext);
 
   if (loading) {
@@ -14,16 +14,9 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!token) {
+  if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Admin routes ainda não implementadas na API
-  // Redireciona para home por enquanto
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
-
-  // Temporariamente redireciona admin para home até implementação da API
-  return <Navigate to="/" replace />;
+  return <>{children}</>;
 }

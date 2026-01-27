@@ -182,7 +182,7 @@ export default function Reservations() {
                           setReservationToDelete(r.id);
                           setDeleteDialogOpen(true);
                         }}
-                        className="text-red-600 flex items-center gap-1"
+                        className="text-red-600 flex items-center gap-1 cursor-pointer transition-color hover:text-red-800"
                       >
                         <X size={16} />
                         Cancelar

@@ -10,6 +10,7 @@ export default function CourtList({
     name: string;
     sports_type?: string;
     description?: string;
+    price_per_hour?: number;
   }[];
   scheduleMap: Record<
     number,
@@ -18,7 +19,7 @@ export default function CourtList({
       date: string;
       start_time: string;
       end_time: string;
-      available: boolean;
+      is_available?: boolean;
       court_id: number;
     }[]
   >;
@@ -42,6 +43,11 @@ export default function CourtList({
                     className="text-sm font-medium"
                   >
                     {court.sports_type}
+                  </div>
+                )}
+                {court.price_per_hour && (
+                  <div className="text-sm text-gray-700 font-semibold mt-1">
+                    R$ {court.price_per_hour.toFixed(2)}/hora
                   </div>
                 )}
                 {court.description && (

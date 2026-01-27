@@ -1,16 +1,42 @@
 import Home from "./pages/Home";
 import logo from "./assets/logo.svg";
-import { Avatar, AvatarImage, AvatarFallback } from "./components/Avatar";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "./context/AuthContext";
 import { useNavigate } from "react-router";
-import { ChevronDown, CircleUserRound, LogOut, Volleyball } from "lucide-react";
+import {
+  LogOut,
+  Building2,
+  User,
+} from "lucide-react";
 import { Button } from "./components/Button";
 
 export default function App() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Controle de navbar ao rolar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < 10) {
+        setShowNavbar(true);
+      } else if (currentScrollY > lastScrollY) {
+        // Rolando para baixo - esconder
+        setShowNavbar(false);
+      } else {
+        // Rolando para cima - mostrar
+        setShowNavbar(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   const handleLogout = () => {
     auth.logout();
@@ -18,107 +44,92 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-200">
-      <div
-        style={{ backgroundColor: "var(--brand-700)" }}
-        className="p-4 shadow-md"
+    <div className="min-h-screen w-full bg-gray-50">
+      {/* NAVBAR FIXA - Aparece ao rolar para cima */}
+      <nav 
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 shadow-lg bg-white border-b border-gray-200 ${
+          showNavbar ? 'translate-y-0' : '-translate-y-full'
+        }`}
       >
-        <header className="max-w-7xl mx-auto flex justify-between items-center px-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={logo}
-              alt="Logo"
-              className="w-12 h-12 object-fill shadow-sm"
-            />
-            <h1
+        <div className="max-w-6xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <button 
               onClick={() => navigate("/")}
-              className="text-white font-semibold text-xl cursor-pointer hover:text-gray-300 transition-colors max-md:hidden"
+              className="flex items-center gap-3 transition hover:opacity-80"
             >
-              Arena Manager
-            </h1>
-          </div>
+              <img src={logo} alt="Arena Manager" className="w-12 h-12" />
+              <div className="hidden sm:block">
+                <h2 className="font-bold text-lg text-emerald-600">
+                  Arena Manager
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Sua plataforma esportiva
+                </p>
+              </div>
+            </button>
 
-          {auth.user ? (
-            <div className="relative">
-              <button
-                onClick={() => setOpen((v) => !v)}
-                className="flex items-center gap-3 text-white cursor-pointer transition-all hover:opacity-80"
-                aria-haspopup="true"
-                aria-expanded={open}
-              >
-                <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-
-                <div className="flex flex-col items-start">
-                  <h5 className="font-medium text-white">
-                    {auth.user.first_name}
-                  </h5>
-                  <p className="text-xs text-gray-300  max-md:hidden">
-                    {auth.user.email}
-                  </p>
-                </div>
-
-                <ChevronDown
-                  className={`h-5 w-5 transition-transform ${
-                    open ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {open && (
-                <ul className="absolute right-0 mt-3 w-52 bg-white rounded-xl shadow-xl text-gray-800 overflow-hidden animate-fadeIn z-50 border border-gray-200">
-                  <li>
-                    <a
-                      href="/user/profile"
-                      onClick={() => setOpen(false)}
-                      className="px-4 py-3 hover:bg-gray-100 flex items-center gap-2"
+            {/* Ações */}
+            <div className="flex items-center gap-3">
+              {auth.user ? (
+                <>
+                  <Button
+                    onClick={() => navigate("/profile")}
+                    variant="outline"
+                    size="default"
+                    className="flex items-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                  >
+                    <User size={18} />
+                    <span className="hidden sm:inline">{auth.user.name || auth.user.username}</span>
+                  </Button>
+                  
+                  {(auth.user.role === "owner" || auth.user.role === "admin") && (
+                    <Button
+                      onClick={() => navigate("/owner")}
+                      variant="default"
+                      size="default"
+                      className="flex items-center gap-2"
                     >
-                      <CircleUserRound className="h-4 w-4 text-gray-500" />
-                      Perfil
-                    </a>
-                  </li>
-
-                  <li>
-                    <a
-                      href="/user/reservations"
-                      onClick={() => setOpen(false)}
-                      className="px-4 py-3 hover:bg-gray-100 flex items-center gap-2"
-                    >
-                      <Volleyball className="h-4 w-4 text-gray-500" />
-                      Minhas Reservas
-                    </a>
-                  </li>
-
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full px-4 py-3 text-left hover:bg-red-50 text-red-600 flex items-center gap-2"
-                    >
-                      <LogOut className="h-4 w-4  text-red-500" />
-                      Sair
-                    </button>
-                  </li>
-                </ul>
+                      <Building2 size={18} />
+                      <span className="hidden sm:inline">Gerenciar</span>
+                    </Button>
+                  )}
+                  
+                  <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-500 hover:text-gray-700"
+                    title="Sair"
+                  >
+                    <LogOut size={20} />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => navigate("/login")}
+                    variant="outline"
+                    size="default"
+                    className="bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                  >
+                    Entrar
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/register")}
+                    variant="default"
+                    size="default"
+                  >
+                    Criar Conta
+                  </Button>
+                </>
               )}
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <a href="/login">
-                <Button
-                  variant="outline"
-                  className="bg-white hover:bg-gray-100"
-                >
-                  Entrar
-                </Button>
-              </a>
-            </div>
-          )}
-        </header>
-      </div>
+          </div>
+        </div>
+      </nav>
 
-      <main className="max-w-7xl mx-auto mt-6 p-4">
+      <main className="pt-16">
         <Home />
       </main>
     </div>
