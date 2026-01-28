@@ -3,11 +3,7 @@ import logo from "./assets/logo.svg";
 import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "./context/AuthContext";
 import { useNavigate } from "react-router";
-import {
-  LogOut,
-  Building2,
-  User,
-} from "lucide-react";
+import { LogOut, Building2, User } from "lucide-react";
 import { Button } from "./components/Button";
 
 export default function App() {
@@ -16,26 +12,23 @@ export default function App() {
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Controle de navbar ao rolar
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       if (currentScrollY < 10) {
         setShowNavbar(true);
       } else if (currentScrollY > lastScrollY) {
-        // Rolando para baixo - esconder
         setShowNavbar(false);
       } else {
-        // Rolando para cima - mostrar
         setShowNavbar(true);
       }
-      
+
       setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
   const handleLogout = () => {
@@ -45,16 +38,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
-      {/* NAVBAR FIXA - Aparece ao rolar para cima */}
-      <nav 
+      <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 shadow-lg bg-white border-b border-gray-200 ${
-          showNavbar ? 'translate-y-0' : '-translate-y-full'
+          showNavbar ? "translate-y-0" : "-translate-y-full"
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            {/* Logo */}
-            <button 
+            <button
               onClick={() => navigate("/")}
               className="flex items-center gap-3 transition hover:opacity-80"
             >
@@ -69,7 +60,6 @@ export default function App() {
               </div>
             </button>
 
-            {/* Ações */}
             <div className="flex items-center gap-3">
               {auth.user ? (
                 <>
@@ -80,10 +70,13 @@ export default function App() {
                     className="flex items-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                   >
                     <User size={18} />
-                    <span className="hidden sm:inline">{auth.user.name || auth.user.username}</span>
+                    <span className="hidden sm:inline">
+                      {auth.user.name || auth.user.username}
+                    </span>
                   </Button>
-                  
-                  {(auth.user.role === "owner" || auth.user.role === "admin") && (
+
+                  {(auth.user.role === "owner" ||
+                    auth.user.role === "admin") && (
                     <Button
                       onClick={() => navigate("/owner")}
                       variant="default"
@@ -94,7 +87,7 @@ export default function App() {
                       <span className="hidden sm:inline">Gerenciar</span>
                     </Button>
                   )}
-                  
+
                   <Button
                     onClick={handleLogout}
                     variant="ghost"

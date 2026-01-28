@@ -2,48 +2,40 @@
 @import "tw-animate-css";
 
 :root {
-  --brand-700: #047857; /* emerald-700 */
-  --brand-600: #059669; /* emerald-600 */
-  --brand-500: #10b981; /* emerald-500 */
+  --brand-700: #047857;
+  --brand-600: #059669;
+  --brand-500: #10b981;
   --brand-200: #bbf7d0;
   --brand-50: #ecfdf5;
   --muted-600: #6b7280;
-  
-  /* Cores principais - Verde */
-  --primary: #059669; /* emerald-600 */
-  --primary-dark: #047857; /* emerald-700 */
-  --primary-light: #10b981; /* emerald-500 */
-  --primary-lighter: #d1fae5; /* emerald-100 */
-  
-  /* Cores secundárias */
-  --secondary: #0891b2; /* cyan-600 */
-  --secondary-light: #cffafe; /* cyan-100 */
-  --secondary-dark: #0e7490; /* cyan-700 */
-  
-  /* Status colors */
-  --success: #10b981; /* emerald-500 */
-  --success-light: #d1fae5; /* emerald-100 */
-  --warning: #f59e0b; /* amber-500 */
-  --warning-light: #fef3c7; /* amber-100 */
-  --danger: #ef4444; /* red-500 */
-  --danger-light: #fee2e2; /* red-100 */
-  
-  /* Neutros */
-  --dark: #1f2937; /* gray-800 */
-  --text-primary: #111827; /* gray-900 */
-  --text-secondary: #6b7280; /* gray-500 */
-  --border: #e5e7eb; /* gray-200 */
-  --bg-light: #f9fafb; /* gray-50 */
+
+  --primary: #059669;
+  --primary-light: #10b981;
+  --primary-lighter: #d1fae5;
+
+  --secondary: #0891b2;
+  --secondary-light: #cffafe;
+
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+
+  --dark: #1f2937;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --bg-light: #f9fafb;
   --bg-white: #ffffff;
-  
-  /* Shadows */
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-/* small helpers for components */
 .brand-bg {
   background-color: var(--brand-50);
 }
@@ -63,7 +55,6 @@
   border: 1px solid #e5e7eb;
 }
 
-/* Cards e containers */
 .card {
   background-color: var(--bg-white);
   border-radius: 0.75rem;
@@ -86,9 +77,12 @@
   border-color: var(--primary);
 }
 
-/* CTA e Buttons */
 .cta-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
   color: white;
   border-radius: 0.75rem;
   padding: 2rem;
@@ -103,7 +97,6 @@
   transform: translateY(-2px);
 }
 
-/* Tags e Filters */
 .filter-tag {
   padding: 0.5rem 1rem;
   border-radius: 9999px;
@@ -126,7 +119,6 @@
   color: white;
 }
 
-/* Grid layouts */
 .arena-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -139,18 +131,16 @@
   gap: 1rem;
 }
 
-/* Responsivos */
 @media (max-width: 768px) {
   .arena-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .schedule-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
-  
+
   .cta-primary {
     padding: 1.5rem 1rem;
   }
 }
-

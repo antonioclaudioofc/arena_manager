@@ -24,7 +24,6 @@ import AdminUsers from "./pages/AdminUsers";
 import Profile from "./pages/Profile";
 import Reservations from "./pages/Reservations";
 
-// Owner pages
 import OwnerDashboard from "./pages/OwnerDashboard";
 import OwnerHome from "./pages/OwnerHome";
 import OwnerArenas from "./pages/OwnerArenas";
@@ -57,7 +56,6 @@ createRoot(document.getElementById("root")!).render(
           }
         />
 
-        {/* Rotas de Admin ainda não implementadas na API */}
         <Route
           path="/admin"
           element={
@@ -109,5 +107,5 @@ createRoot(document.getElementById("root")!).render(
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
-  </AuthProvider>
+  </AuthProvider>,
 );
