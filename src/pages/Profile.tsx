@@ -100,7 +100,7 @@ export default function Profile() {
 
         {/* Seção para se tornar proprietário */}
         {user?.role === "client" && (
-          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg shadow-md p-8 border border-green-200">
+          <div className=" from-green-50 to-green-100 rounded-lg shadow-md p-8 border border-green-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-green-600 p-4 rounded-full shrink-0">
                 <Building2 className="h-8 w-8 text-white" />

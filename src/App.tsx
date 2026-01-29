@@ -47,7 +47,7 @@ export default function App() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/")}
-              className="flex items-center gap-3 transition hover:opacity-80"
+              className="flex items-center gap-3 transition hover:opacity-80 cursor-pointer"
             >
               <img src={logo} alt="Arena Manager" className="w-12 h-12" />
               <div className="hidden sm:block">
@@ -102,17 +102,12 @@ export default function App() {
                 <>
                   <Button
                     onClick={() => navigate("/login")}
-                    variant="outline"
-                    size="default"
                     className="bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                    variant="outline"
                   >
                     Entrar
                   </Button>
-                  <Button
-                    onClick={() => navigate("/register")}
-                    variant="default"
-                    size="default"
-                  >
+                  <Button onClick={() => navigate("/register")}>
                     Criar Conta
                   </Button>
                 </>

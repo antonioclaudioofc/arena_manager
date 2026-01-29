@@ -1,3 +1,4 @@
+import { capitalizeWords } from "../utils/capitalizeWords";
 import ScheduleCard from "./ScheduleCard";
 
 export default function CourtList({
@@ -35,14 +36,14 @@ export default function CourtList({
               <div className="w-20 h-20 rounded-md bg-gray-800" />
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-800">
-                  {court.name}
+                  {capitalizeWords(court.name)}
                 </h3>
                 {court.sports_type && (
                   <div
                     style={{ color: "var(--brand-600)" }}
                     className="text-sm font-medium"
                   >
-                    {court.sports_type}
+                    {capitalizeWords(court.sports_type)}
                   </div>
                 )}
                 {court.price_per_hour && (
@@ -62,10 +63,10 @@ export default function CourtList({
                   Nenhum horário disponível
                 </div>
               ) : (
-                schedules.map((s) => (
+                schedules.map((schedule) => (
                   <ScheduleCard
-                    key={s.id}
-                    schedule={s}
+                    key={schedule.id}
+                    schedule={schedule}
                     onReservationSuccess={onReservationSuccess}
                   />
                 ))
