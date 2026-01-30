@@ -17,7 +17,7 @@ import {
 } from "../components/Form";
 import { Input } from "../components/Input";
 import logo from "../assets/logo.svg";
-import { MoveLeft, LogIn, Zap, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import { MoveLeft, LogIn, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router";
 
 const formSchema = z.object({
@@ -78,10 +78,13 @@ export default function Login() {
 
   return (
     <section className="w-full min-h-screen flex bg-gray-50">
-      {/* Lado Esquerdo - Decorativo FIXO (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8 sticky top-0 h-screen bg-emerald-700">
         <div className="text-center text-white max-w-md">
-          <img src={logo} className="w-24 md:w-32 h-24 md:h-32 mx-auto mb-6" alt="Logo" />
+          <img
+            src={logo}
+            className="w-24 md:w-32 h-24 md:h-32 mx-auto mb-6"
+            alt="Logo"
+          />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Arena Manager</h2>
           <p className="text-base md:text-lg opacity-90 mb-8">
             Sua plataforma completa para gerenciar e agendar arenas esportivas
@@ -89,19 +92,19 @@ export default function Login() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-left">
               <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20">
-                <CheckCircle2 size={20} className="text-white" />
+                <CheckCircle2 className="text-white w-5 h-5" />
               </div>
               <span>Buscar e reservar arenas</span>
             </div>
             <div className="flex items-center gap-3 text-left">
               <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20">
-                <CheckCircle2 size={20} className="text-white" />
+                <CheckCircle2 className="text-white h-5 w-5" />
               </div>
               <span>Gerenciar seus horários</span>
             </div>
             <div className="flex items-center gap-3 text-left">
               <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/20">
-                <CheckCircle2 size={20} className="text-white" />
+                <CheckCircle2 className="text-white h-5 w-5" />
               </div>
               <span>Aumentar seus lucros</span>
             </div>
@@ -109,23 +112,20 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Lado Direito - Formulário com SCROLL */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto">
         <div className="w-full max-w-md">
-          {/* Voltar */}
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 mb-6 md:mb-8 font-semibold transition hover:opacity-70 text-emerald-600"
+            className="flex items-center gap-2 mb-6 md:mb-8 font-semibold cursor-pointer transition hover:opacity-70 text-emerald-600"
           >
             <MoveLeft className="w-4 h-4" />
             <span>Voltar</span>
           </button>
 
-          {/* Header */}
           <div className="text-center mb-8 md:mb-10">
             <div className="flex justify-center mb-4">
               <div className="p-3 rounded-lg bg-emerald-100">
-                <LogIn size={32} className="text-emerald-600" />
+                <LogIn className="text-emerald-600 h-8 w-8" />
               </div>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900">
@@ -136,9 +136,11 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Formulário */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 mb-8">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-5 mb-8"
+            >
               <FormField
                 control={form.control}
                 name="username"
@@ -148,10 +150,7 @@ export default function Login() {
                       Nome de Usuário
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Seu nome de usuário"
-                        {...field}
-                      />
+                      <Input placeholder="Seu nome de usuário" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,9 +176,13 @@ export default function Login() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 transition hover:opacity-70 text-gray-500"
+                          className="absolute right-3 top-1/2 cursor-pointer transform -translate-y-1/2 transition hover:opacity-70 text-gray-500"
                         >
-                          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                          {showPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                     </FormControl>
@@ -188,25 +191,18 @@ export default function Login() {
                 )}
               />
 
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="default"
-                className="w-full"
-              >
+              <Button disabled={loading} className="w-full p-3">
                 {loading ? "Entrando..." : "Entrar na Conta"}
               </Button>
             </form>
           </Form>
 
-          {/* Divider */}
           <div className="my-8 flex items-center gap-4">
             <div className="flex-1 h-px bg-gray-200"></div>
             <span className="text-gray-500 text-sm">ou</span>
             <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
-          {/* Demo Login */}
           <div className="mb-8">
             <p className="text-gray-500 text-sm text-center mb-3">
               Teste com credenciais de demo:
@@ -218,7 +214,6 @@ export default function Login() {
                 variant="outline"
                 className="w-full bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
               >
-                <Zap size={16} className="mr-2" />
                 Demo Admin
               </Button>
               <Button
@@ -227,13 +222,11 @@ export default function Login() {
                 variant="outline"
                 className="w-full bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100"
               >
-                <Zap size={16} className="mr-2" />
                 Demo Cliente
               </Button>
             </div>
           </div>
 
-          {/* Link para Registro - MELHORADO */}
           <div className="text-center p-4 md:p-6 rounded-lg bg-white border-2 border-gray-200">
             <p className="text-gray-500 mb-3 font-medium">
               Não possui uma conta?

@@ -224,7 +224,7 @@ export default function Home() {
     <section className="min-h-screen bg-gray-50">
       {!selectedArena && (
         <div className="p-4 md:p-6 pb-8 md:pb-12 pt-8 md:pt-12 bg-linear-to-b from-white to-gray-50 border-b border-gray-200">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="text-center mb-6 md:mb-10">
               <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-gray-900">
                 Encontre sua Arena Perfeita
@@ -288,7 +288,7 @@ export default function Home() {
       )}
 
       <div className="p-4 md:p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {arenaView === "list" ? (
             <div className="space-y-6">
               {filteredArenas.length === 0 ? (
@@ -373,7 +373,7 @@ export default function Home() {
               )}
             </div>
           ) : selectedArena ? (
-            <div className="space-y-6">
+            <div className="space-y-6 pt-6">
               <div className="card">
                 <button
                   onClick={handleBackToList}
@@ -469,7 +469,7 @@ export default function Home() {
 
       {(!user || user?.role === "client") && arenaView === "list" && (
         <div className="p-4 md:p-8 mt-8 md:mt-12 bg-emerald-50 border-t-2 border-emerald-600">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
               <div className="flex items-start gap-4 flex-1">
                 <div className="p-3 rounded-lg shrink-0 bg-emerald-600">
