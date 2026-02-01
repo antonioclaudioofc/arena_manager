@@ -1,5 +1,4 @@
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { CalendarDays, Pencil, Trash2, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/Select";
+import { AuthContext } from "../providers/AuthProvider";
 
 interface Arena {
   id: number;
@@ -160,7 +160,9 @@ export default function OwnerSchedules() {
 
   const fetchSchedules = async (courtId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/public/courts/${courtId}/schedules`);
+      const response = await fetch(
+        `${API_BASE}/public/courts/${courtId}/schedules`,
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -198,7 +200,7 @@ export default function OwnerSchedules() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify(formData),
-          }
+          },
         );
 
         if (response.ok) {
@@ -271,8 +273,12 @@ export default function OwnerSchedules() {
           start_time: batchFormData.start_time,
           end_time: batchFormData.end_time,
           interval_minutes: parseInt(batchFormData.interval_minutes),
-          weekdays: batchFormData.weekdays.length > 0 ? batchFormData.weekdays : undefined,
-          months: batchFormData.months.length > 0 ? batchFormData.months : undefined,
+          weekdays:
+            batchFormData.weekdays.length > 0
+              ? batchFormData.weekdays
+              : undefined,
+          months:
+            batchFormData.months.length > 0 ? batchFormData.months : undefined,
         }),
       });
 
@@ -291,7 +297,11 @@ export default function OwnerSchedules() {
   };
 
   const handleDelete = async (scheduleId: number) => {
-    if (!confirm("Tem certeza que deseja deletar este horário? Reservas associadas serão removidas.")) {
+    if (
+      !confirm(
+        "Tem certeza que deseja deletar este horário? Reservas associadas serão removidas.",
+      )
+    ) {
       return;
     }
 
@@ -407,13 +417,16 @@ export default function OwnerSchedules() {
     );
   }
 
-  const groupedSchedules = schedules.reduce((acc, schedule) => {
-    if (!acc[schedule.date]) {
-      acc[schedule.date] = [];
-    }
-    acc[schedule.date].push(schedule);
-    return acc;
-  }, {} as Record<string, Schedule[]>);
+  const groupedSchedules = schedules.reduce(
+    (acc, schedule) => {
+      if (!acc[schedule.date]) {
+        acc[schedule.date] = [];
+      }
+      acc[schedule.date].push(schedule);
+      return acc;
+    },
+    {} as Record<string, Schedule[]>,
+  );
 
   return (
     <div className="space-y-6">

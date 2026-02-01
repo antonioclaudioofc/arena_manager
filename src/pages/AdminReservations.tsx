@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { toast } from "sonner";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -106,7 +107,7 @@ export default function AdminReservations() {
       fetchReservations();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Erro ao excluir reserva");
+      toast.error(getErrorMessage(err));
     }
   };
 

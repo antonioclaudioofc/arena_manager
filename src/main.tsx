@@ -6,7 +6,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { Toaster } from "sonner";
 
-import { AuthProvider } from "./context/AuthContext";
 import PublicRoute from "./routes/PublicRoute";
 import AdminRoute from "./routes/AdminRoute";
 import OwnerRoute from "./routes/OwnerRoute";
@@ -30,82 +29,81 @@ import OwnerArenas from "./pages/OwnerArenas";
 import OwnerCourts from "./pages/OwnerCourts";
 import OwnerSchedules from "./pages/OwnerSchedules";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "./providers/AuthProvider";
+
+const queryClient = new QueryClient();
+
 createRoot(document.getElementById("root")!).render(
-  <AuthProvider>
-    <BrowserRouter>
-      <Toaster richColors position="top-center" />
-
-      <Routes>
-        <Route index element={<App />} />
-
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <Dashboard />
-            </AdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="courts" element={<AdminCourts />} />
-          <Route path="schedules" element={<AdminSchedules />} />
-          <Route path="reservations" element={<AdminReservations />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="config" element={<AdminConfig />} />
-        </Route>
-
-        <Route
-          path="/owner"
-          element={
-            <OwnerRoute>
-              <OwnerDashboard />
-            </OwnerRoute>
-          }
-        >
-          <Route index element={<OwnerHome />} />
-          <Route path="arenas" element={<OwnerArenas />} />
-          <Route path="courts" element={<OwnerCourts />} />
-          <Route path="schedules" element={<OwnerSchedules />} />
-        </Route>
-
-        <Route
-          path="/user/reservations"
-          element={
-            <UserRoute>
-              <Reservations />
-            </UserRoute>
-          }
-        />
-
-        <Route
-          path="/user/profile"
-          element={
-            <AuthenticatedRoute>
-              <Profile />
-            </AuthenticatedRoute>
-          }
-        />
-
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
-  </AuthProvider>,
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster richColors position="top-center" />
+        <Routes>
+          <Route index element={<App />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Dashboard />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="courts" element={<AdminCourts />} />
+            <Route path="schedules" element={<AdminSchedules />} />
+            <Route path="reservations" element={<AdminReservations />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="config" element={<AdminConfig />} />
+          </Route>
+          <Route
+            path="/owner"
+            element={
+              <OwnerRoute>
+                <OwnerDashboard />
+              </OwnerRoute>
+            }
+          >
+            <Route index element={<OwnerHome />} />
+            <Route path="arenas" element={<OwnerArenas />} />
+            <Route path="courts" element={<OwnerCourts />} />
+            <Route path="schedules" element={<OwnerSchedules />} />
+          </Route>
+          <Route
+            path="/user/reservations"
+            element={
+              <UserRoute>
+                <Reservations />
+              </UserRoute>
+            }
+          />
+          <Route
+            path="/user/profile"
+            element={
+              <AuthenticatedRoute>
+                <Profile />
+              </AuthenticatedRoute>
+            }
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  </QueryClientProvider>,
 );

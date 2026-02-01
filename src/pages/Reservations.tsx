@@ -1,7 +1,8 @@
 import { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -98,7 +99,7 @@ export default function Reservations() {
       setReservationToDelete(null);
       fetchReservations();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao cancelar reserva");
+      toast.error(getErrorMessage(err));
     }
   };
 

@@ -1,7 +1,14 @@
-import { useMemo, useState, useEffect, useContext, useCallback } from "react";
+import { useState, useContext } from "react";
+import {
+  usePublicArenas,
+  usePublicCourtsByArena,
+  usePublicSchedulesByCourts,
+  usePublicArenasFiltering,
+  useDatePills,
+  useScheduleMapping,
+} from "../hooks/use-public";
+import { useUserReservations } from "../hooks/use-reservation";
 import CourtList from "../components/CourtList";
-import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router";
 import {
   Building2,
@@ -17,188 +24,60 @@ import { Input } from "../components/Input";
 import { Button } from "../components/Button";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
+import { capitalizeWords } from "../utils/capitalizeWords";
+import { AuthContext } from "../providers/AuthProvider";
+import type { Arena } from "../types/arena";
 
 dayjs.locale("pt-br");
 
-interface Arena {
-  id: number;
-  name: string;
-  city: string;
-  address: string;
-}
-
 export default function Home() {
-  const [arenas, setArenas] = useState<Arena[]>([]);
   const [selectedArena, setSelectedArena] = useState<Arena | null>(null);
   const [arenaView, setArenaView] = useState<"list" | "detail">("list");
-  const [courts, setCourts] = useState<any[]>([]);
-  const [schedules, setSchedules] = useState<any[]>([]);
-  const [reservedScheduleIds, setReservedScheduleIds] = useState<number[]>([]);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [filteredArenas, setFilteredArenas] = useState<Arena[]>([]);
+
+  const { data: arenas = [] } = usePublicArenas();
 
   const { token, user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const { filteredArenas, cities } = usePublicArenasFiltering(
+    arenas,
+    searchQuery,
+    selectedCity,
+  );
 
-  useEffect(() => {
-    const fetchArenas = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/public/arenas`);
-        if (!response.ok) throw new Error("Erro ao buscar arenas");
+  const { data: reservations = [], refetch: refetchReservations } =
+    useUserReservations(!!token);
 
-        const data = await response.json();
-        setArenas(data);
-        setFilteredArenas(data);
-      } catch (err) {
-        console.error("Erro ao carregar arenas:", err);
-        toast.error("Erro ao carregar arenas");
-      }
-    };
+  const reservedScheduleIds = (reservations || [])
+    .map((r: any) => r.schedule_id)
+    .filter(Boolean);
 
-    fetchArenas();
-  }, [API_BASE]);
+  const { data: courts = [], refetch: refetchCourts } = usePublicCourtsByArena(
+    selectedArena?.id || null,
+  );
 
-  useEffect(() => {
-    let filtered = arenas;
+  const { schedules, schedulesQueries } = usePublicSchedulesByCourts(
+    courts as any[],
+    !!selectedArena,
+  );
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (arena) =>
-          arena.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          arena.city.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
+  const datePills = useDatePills();
 
-    if (selectedCity) {
-      filtered = filtered.filter((arena) => arena.city === selectedCity);
-    }
+  const scheduleMap = useScheduleMapping(
+    schedules,
+    reservedScheduleIds,
+    selectedDateIndex,
+    datePills,
+  );
 
-    setFilteredArenas(filtered);
-  }, [searchQuery, selectedCity, arenas]);
-
-  const cities = useMemo(() => {
-    return Array.from(new Set(arenas.map((a) => a.city))).sort();
-  }, [arenas]);
-
-  const fetchReservedSchedules = useCallback(async () => {
-    if (!token) {
-      setReservedScheduleIds([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/reservations/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        setReservedScheduleIds([]);
-        return;
-      }
-
-      const reservations = await response.json();
-      const ids = reservations.map((r: any) => r.schedule_id).filter(Boolean);
-      setReservedScheduleIds(ids);
-    } catch (err) {
-      console.error("Erro ao buscar reservas:", err);
-      setReservedScheduleIds([]);
-    }
-  }, [token, API_BASE]);
-
-  useEffect(() => {
-    if (!selectedArena) return;
-
-    const fetchCourtsAndSchedules = async () => {
-      try {
-        const courtsResponse = await fetch(
-          `${API_BASE}/public/arenas/${selectedArena.id}/courts`,
-        );
-        if (!courtsResponse.ok) throw new Error("Erro ao buscar quadras");
-
-        const courtsData = await courtsResponse.json();
-        setCourts(courtsData);
-
-        const allSchedules: any[] = [];
-        for (const court of courtsData) {
-          const schedulesResponse = await fetch(
-            `${API_BASE}/public/courts/${court.id}/schedules`,
-          );
-          if (schedulesResponse.ok) {
-            const scheduleData = await schedulesResponse.json();
-            allSchedules.push(...scheduleData);
-          }
-        }
-        setSchedules(allSchedules);
-
-        await fetchReservedSchedules();
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-        toast.error("Erro ao carregar dados");
-      }
-    };
-
-    fetchCourtsAndSchedules();
-  }, [selectedArena, API_BASE, fetchReservedSchedules]);
-
-  const datePills = useMemo(() => {
-    const base = dayjs().startOf("day");
-
-    return Array.from({ length: 7 }).map((_, i) => {
-      const d = base.add(i, "day");
-      return {
-        label: `${d.format("DD")} ${d.format("ddd").toUpperCase()}`,
-        iso: d.format("YYYY-MM-DD"),
-      };
-    });
-  }, []);
-
-  const scheduleMap = useMemo(() => {
-    const map: Record<number, any[]> = {};
-    const selectedIso = datePills[selectedDateIndex]?.iso;
-
-    if (!selectedIso) return map;
-
-    schedules.forEach((s) => {
-      if (s.date !== selectedIso) return;
-
-      const isAvailable = s.is_available && !reservedScheduleIds.includes(s.id);
-      if (!isAvailable) return;
-
-      const courtId = s.court_id;
-      if (!courtId) return;
-
-      map[courtId] = map[courtId] || [];
-      map[courtId].push(s);
-    });
-
-    return map;
-  }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
-
-  const refetchData = useCallback(() => {
-    if (selectedArena) {
-      const fetchData = async () => {
-        const allSchedules: any[] = [];
-        for (const court of courts) {
-          const schedulesResponse = await fetch(
-            `${API_BASE}/public/courts/${court.id}/schedules`,
-          );
-          if (schedulesResponse.ok) {
-            const scheduleData = await schedulesResponse.json();
-            allSchedules.push(...scheduleData);
-          }
-        }
-        setSchedules(allSchedules);
-        await fetchReservedSchedules();
-      };
-      fetchData();
-    }
-  }, [selectedArena, courts, API_BASE, fetchReservedSchedules]);
+  const refetchData = () => {
+    schedulesQueries.forEach((q: any) => q.refetch && q.refetch());
+    refetchReservations && refetchReservations();
+    refetchCourts && refetchCourts();
+  };
 
   const handleSelectArena = (arena: Arena) => {
     setSelectedArena(arena);
@@ -221,79 +100,78 @@ export default function Home() {
 
   return (
     <section className="min-h-screen bg-gray-50">
-      <div className="p-4 md:p-6 pb-8 md:pb-12 pt-8 md:pt-12 bg-linear-to-b from-white to-gray-50 border-b border-gray-200">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-6 md:mb-10">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-gray-900">
-              Encontre sua Arena Perfeita
-            </h1>
-            <p className="text-base md:text-xl text-gray-500">
-              Descubra as melhores arenas esportivas próximas a você
-            </p>
-          </div>
-
-          <div className="max-w-2xl mx-auto">
-            <div className="relative mb-6 md:mb-8 shadow-lg">
-              <Search
-                size={24}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none z-10"
-              />
-              <Input
-                type="text"
-                placeholder="Buscar arena ou cidade..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-16 pr-16 py-7 text-lg rounded-xl border bg-gray-50 text-gray-900 placeholder:text-gray-500 focus:bg-white"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 transition hover:opacity-60 text-gray-500 z-10"
-                >
-                  <X size={20} />
-                </button>
-              )}
+      {!selectedArena && (
+        <div className="p-4 md:p-6 pb-8 md:pb-12 pt-8 md:pt-12 bg-linear-to-b from-white to-gray-50 border-b border-gray-200">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-6 md:mb-10">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-gray-900">
+                Encontre sua Arena Perfeita
+              </h1>
+              <p className="text-base md:text-xl text-gray-500">
+                Descubra as melhores arenas esportivas próximas a você
+              </p>
             </div>
 
-            {cities.length > 0 && (
-              <div>
-                <p className="text-sm font-semibold mb-3 text-center text-gray-900">
-                  Filtrar por Local:
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
+            <div className="max-w-2xl mx-auto">
+              <div className="relative mb-6 md:mb-8 shadow-lg">
+                <Search
+                  size={24}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none z-10"
+                />
+                <Input
+                  type="text"
+                  placeholder="Buscar arena ou cidade..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-16 pr-16 py-7 text-lg rounded-xl border border-gray-300 bg-gray-50 text-gray-900 placeholder:text-gray-500 focus:bg-white"
+                />
+                {searchQuery && (
                   <button
-                    onClick={() => setSelectedCity(null)}
-                    className={`filter-tag ${!selectedCity ? "active" : ""}`}
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 transition hover:opacity-60 text-gray-500 z-10"
                   >
-                    <MapPinned size={16} className="inline mr-1" />
-                    Todas as Cidades
+                    <X size={20} />
                   </button>
-                  {cities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => setSelectedCity(city)}
-                      className={`filter-tag ${selectedCity === city ? "active" : ""}`}
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
+                )}
               </div>
-            )}
+
+              {cities.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-3 text-center text-gray-900">
+                    Filtrar por Local:
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <button
+                      onClick={() => setSelectedCity(null)}
+                      className={`filter-tag ${!selectedCity ? "active" : ""}`}
+                    >
+                      <MapPinned size={16} className="inline mr-1" />
+                      Todos
+                    </button>
+                    {cities.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => setSelectedCity(city)}
+                        className={`filter-tag ${selectedCity === city ? "active" : ""}`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="p-4 md:p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {arenaView === "list" ? (
             <div className="space-y-6">
               {filteredArenas.length === 0 ? (
                 <div className="card text-center p-8 md:p-16">
-                  <Building2
-                    size={56}
-                    className="mx-auto mb-4 opacity-40 text-gray-500"
-                  />
+                  <Building2 className="mx-auto mb-4 opacity-40 text-gray-500 w-14 h-14" />
                   <h3 className="text-xl md:text-2xl font-bold mb-2 text-gray-900">
                     Nenhuma arena encontrada
                   </h3>
@@ -315,7 +193,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                      {filteredArenas.length} arena
+                      {filteredArenas.length} Arena
                       {filteredArenas.length !== 1 ? "s" : ""} encontrada
                       {filteredArenas.length !== 1 ? "s" : ""}
                     </h2>
@@ -332,15 +210,11 @@ export default function Home() {
                         <div className="relative z-10">
                           <div className="flex items-start justify-between mb-4">
                             <div className="p-3 rounded-xl group-hover:scale-110 transition-transform shrink-0 shadow-sm bg-emerald-100">
-                              <Building2
-                                size={28}
-                                className="text-emerald-600"
-                              />
+                              <Building2 className="text-emerald-600 w-7 h-7" />
                             </div>
                             <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
                               <Star
-                                size={16}
-                                className="text-amber-500"
+                                className="text-amber-500 w-4 h-4"
                                 fill="currentColor"
                               />
                               <span className="text-sm font-bold text-amber-500">
@@ -350,26 +224,23 @@ export default function Home() {
                           </div>
 
                           <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-emerald-600 transition-colors text-gray-900">
-                            {arena.name}
+                            {capitalizeWords(arena.name)}
                           </h3>
 
                           <div className="space-y-2 mb-5">
                             <div className="flex items-center gap-2">
-                              <MapPin size={16} className="text-emerald-600" />
+                              <MapPin className="text-emerald-600 w-4 h-4" />
                               <p className="text-sm font-semibold text-gray-500">
-                                {arena.city}
+                                {capitalizeWords(arena.city)}
                               </p>
                             </div>
                             <p className="text-xs leading-relaxed pl-6 text-gray-500">
-                              {arena.address}
+                              {capitalizeWords(arena.address)}
                             </p>
                           </div>
 
-                          <Button
-                            variant="default"
-                            className="w-full flex items-center justify-center gap-2"
-                          >
-                            Ver Horários
+                          <Button className="w-full flex items-center justify-center gap-2">
+                            Ver horários
                             <ChevronDown size={18} className="-rotate-90" />
                           </Button>
                         </div>
@@ -380,35 +251,34 @@ export default function Home() {
               )}
             </div>
           ) : selectedArena ? (
-            <div className="space-y-6">
+            <div className="space-y-6 pt-6">
               <div className="card">
                 <button
                   onClick={handleBackToList}
-                  className="flex items-center gap-2 text-sm font-semibold mb-6 transition text-emerald-600 hover:text-emerald-700"
+                  className="flex items-center cursor-pointer gap-2 text-sm font-semibold mb-6 transition text-emerald-600 hover:text-emerald-700"
                 >
-                  <ChevronDown size={18} className="rotate-90" />
-                  Voltar para Arenas
+                  <ChevronDown className="rotate-90 h-5 w-5" />
+                  Voltar para arenas
                 </button>
 
                 <div className="flex flex-col md:flex-row items-start gap-4 mb-4">
                   <div className="p-4 rounded-lg shrink-0 bg-emerald-100">
-                    <Building2 size={32} className="text-emerald-600" />
+                    <Building2 className="text-emerald-600 w-8 h-8" />
                   </div>
                   <div className="flex-1 w-full">
                     <h1 className="text-2xl md:text-3xl font-bold mb-3 text-gray-900">
-                      {selectedArena.name}
+                      {capitalizeWords(selectedArena.name)}
                     </h1>
                     <div className="flex flex-wrap items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <MapPin size={16} className="text-emerald-600" />
+                        <MapPin className="text-emerald-600 w-4 h-4" />
                         <span className="font-semibold text-gray-500">
-                          {selectedArena.city}
+                          {capitalizeWords(selectedArena.city)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1.5 rounded-full">
                         <Star
-                          size={16}
-                          className="text-amber-500"
+                          className="text-amber-500 w-4 h-6"
                           fill="currentColor"
                         />
                         <span className="font-bold text-amber-500">4.5</span>
@@ -421,22 +291,21 @@ export default function Home() {
                 </div>
 
                 <p className="text-sm bg-gray-50 p-3 rounded-lg flex items-center gap-2 text-gray-500">
-                  <MapPin size={16} className="text-emerald-600" />
-                  {selectedArena.address}
+                  <MapPin className="text-emerald-600 w-4 h-4" />
+                  {capitalizeWords(selectedArena.address)}
                 </p>
               </div>
 
-              {/* Seletor de Datas */}
               <div className="card">
                 <h3 className="text-lg font-bold mb-4 text-gray-900">
-                  Selecione a Data
+                  Selecione a data
                 </h3>
                 <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
                   {datePills.map((d, i) => (
                     <button
                       key={d.iso}
                       onClick={() => setSelectedDateIndex(i)}
-                      className={`px-3 md:px-4 py-3 rounded-lg border-2 transition shrink-0 ${
+                      className={`px-3 md:px-4 py-3 rounded-lg border-2 transition shrink-0 cursor-pointer ${
                         i === selectedDateIndex
                           ? "border-emerald-600 bg-emerald-50 text-emerald-600"
                           : "border-gray-200 bg-white text-gray-500"
@@ -453,7 +322,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Quadras e Horários */}
               {courts.length === 0 ? (
                 <div className="card text-center p-8 md:p-12">
                   <h3 className="text-xl font-bold mb-2 text-gray-900">
@@ -479,7 +347,7 @@ export default function Home() {
 
       {(!user || user?.role === "client") && arenaView === "list" && (
         <div className="p-4 md:p-8 mt-8 md:mt-12 bg-emerald-50 border-t-2 border-emerald-600">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
               <div className="flex items-start gap-4 flex-1">
                 <div className="p-3 rounded-lg shrink-0 bg-emerald-600">

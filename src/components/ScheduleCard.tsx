@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -19,7 +20,7 @@ export default function ScheduleCard({
     date: string;
     start_time: string;
     end_time: string;
-    available: boolean;
+    is_available?: boolean;
     court_id: number;
   };
   onReservationSuccess?: () => void;
@@ -61,7 +62,7 @@ export default function ScheduleCard({
       onReservationSuccess?.();
     } catch (err: any) {
       console.error("Erro ao fazer reserva:", err);
-      toast.error(err.message || "Erro ao fazer reserva");
+      toast.error(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -70,16 +71,16 @@ export default function ScheduleCard({
   return (
     <>
       <div
-        onClick={() => schedule.available && setDialogOpen(true)}
+        onClick={() => schedule.is_available && setDialogOpen(true)}
         className={`flex items-center gap-3 p-3 rounded-lg shadow-sm bg-white hover:bg-gray-50 ${
-          schedule.available
+          schedule.is_available
             ? "cursor-pointer"
             : "cursor-not-allowed opacity-60"
         }`}
       >
         <div
           className={`px-3 py-2 rounded-md text-sm font-medium ${
-            schedule.available ? "chip-available" : "chip-occupied"
+            schedule.is_available ? "chip-is_available" : "chip-occupied"
           }`}
         >
           <div className="text-sm">
@@ -87,7 +88,7 @@ export default function ScheduleCard({
           </div>
         </div>
         <div className="text-sm text-gray-600">
-          {schedule.available ? (
+          {schedule.is_available ? (
             <span
               style={{ color: "var(--brand-600)" }}
               className="font-semibold"

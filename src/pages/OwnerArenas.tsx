@@ -1,5 +1,4 @@
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { Building2, Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
@@ -13,6 +12,7 @@ import {
 import { Input } from "../components/Input";
 import { Label } from "../components/Label";
 import { useSearchParams } from "react-router";
+import { AuthContext } from "../providers/AuthProvider";
 
 interface Arena {
   id: number;

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import logo from "../assets/logo.svg";
 import {
   Sidebar,

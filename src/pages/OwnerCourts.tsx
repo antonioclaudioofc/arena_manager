@@ -1,5 +1,4 @@
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { Trophy, Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/Select";
+import { AuthContext } from "../providers/AuthProvider";
 
 interface Arena {
   id: number;

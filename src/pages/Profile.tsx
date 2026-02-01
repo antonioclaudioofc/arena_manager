@@ -1,7 +1,7 @@
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, MoveLeft } from "lucide-react";
 import logo from "../assets/logo.svg";
 import { Button } from "../components/Button";
 
@@ -20,33 +20,39 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div
-        style={{ backgroundColor: "var(--brand-700)" }}
-        className=" from-green-700 to-green-800 shadow-md"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <nav className="fixed top-0 left-0 right-0 z-50 transition-transform  duration-300 shadow-lg bg-white border-b border-gray-200 translate-y-0">
+        <div className="max-w-7xl p-6 mx-auto">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => navigate("/")}
-              className="p-2 max-md:p-0 hover:bg-green-600 rounded-lg transition-colors text-white cursor-pointer"
-              title="Voltar"
+              className="flex items-center gap-3 transition hover:opacity-80 cursor-pointer"
             >
-              <ArrowLeft size={24} />
+              <ArrowLeft className="" />
+              <img src={logo} alt="Arena Manager" className="w-12 h-12" />
+              <div className="hidden sm:block">
+                <h2 className="font-bold text-lg text-emerald-600">
+                  Arena Manager
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Sua plataforma esportiva
+                </p>
+              </div>
             </button>
-            <a
-              href="/"
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-            >
-              <img src={logo} alt="Logo" className="h-12 w-auto" />
-            </a>
+            <div className="text-green-700 text-2xl font-medium">
+              Meu Perfil
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-white max-md:text-lg">
-            Meu Perfil
-          </h1>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6 mt-20">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2 mb-6 md:mb-8 font-semibold text-2xl cursor-pointer transition hover:opacity-70 text-emerald-600"
+        >
+          <MoveLeft className="w-6 h-6" />
+          <span>Voltar</span>
+        </button>
         {user && (
           <div className="bg-white rounded-lg shadow-md p-8">
             <div className="flex flex-wrap max-md:justify-center max-md:text-center items-center gap-6 mb-6">
@@ -92,15 +98,14 @@ export default function Profile() {
             <div>
               <p className="text-sm text-gray-600">Tipo de Conta</p>
               <p className="text-lg font-medium text-gray-900 max-md:text-base">
-                {getRoleName(user?.role)}
+                {getRoleName(user!.role)}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Seção para se tornar proprietário */}
         {user?.role === "client" && (
-          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg shadow-md p-8 border border-green-200">
+          <div className=" bg-white rounded-lg shadow-md p-8 border border-green-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-green-600 p-4 rounded-full shrink-0">
                 <Building2 className="h-8 w-8 text-white" />
@@ -125,9 +130,8 @@ export default function Profile() {
           </div>
         )}
 
-        {/* Acesso ao painel para owners */}
         {user?.role === "owner" && (
-          <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg shadow-md p-8 border border-green-200">
+          <div className=" from-green-50 to-green-100 rounded-lg shadow-md p-8 border border-green-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-green-600 p-4 rounded-full shrink-0">
                 <Building2 className="h-8 w-8 text-white" />

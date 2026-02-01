@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { toast } from "sonner";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -80,7 +81,7 @@ export default function AdminUsers() {
       fetchUsers();
     } catch (err: any) {
       console.error("Erro ao excluir usuário:", err);
-      toast.error(err.message || "Erro ao excluir usuário");
+      toast.error(getErrorMessage(err));
     }
   };
 

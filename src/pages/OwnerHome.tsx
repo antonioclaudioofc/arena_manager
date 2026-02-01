@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
 import { Building2, Trophy, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
+import { AuthContext } from "../providers/AuthProvider";
 
 interface Arena {
   id: number;
