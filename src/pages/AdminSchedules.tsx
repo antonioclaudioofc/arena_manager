@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -151,7 +152,7 @@ export default function AdminSchedules() {
       setScheduleToDelete(null);
     } catch (err: any) {
       console.error("Erro ao excluir horário:", err);
-      toast.error(err.message || "Erro ao excluir horário");
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -396,7 +397,7 @@ function FormSchedule({
       form.reset();
     } catch (err: any) {
       console.error("Erro ao salvar horário:", err);
-      toast.error(err.message || "Erro ao salvar horário");
+      toast.error(getErrorMessage(err));
     } finally {
       setIsSubmitting(false);
     }

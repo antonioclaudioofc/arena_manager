@@ -1,0 +1,152 @@
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { http } from "../api/http";
+import type { Arena } from "../types/arena";
+import type { Court } from "../types/court";
+import type { Schedule } from "../types/schedule";
+import { useMemo } from "react";
+import dayjs from "dayjs";
+
+// ============================================================================
+// API Functions
+// ============================================================================
+
+const getAllArenas = async (): Promise<Arena[]> => {
+  const { data } = await http.get("/public/arenas");
+  return data;
+};
+
+const getAllCourtsByArena = async (arenaId: number): Promise<Court[]> => {
+  const { data } = await http.get(`/public/arenas/${arenaId}/courts`);
+  return data;
+};
+
+const getAllSchedulesByCourt = async (courtId: number): Promise<Schedule[]> => {
+  const { data } = await http.get(`/public/courts/${courtId}/schedules`);
+  return data;
+};
+
+// ============================================================================
+// React Query Hooks
+// ============================================================================
+
+export function usePublicArenas() {
+  return useQuery<Arena[], Error>({
+    queryKey: ["arenas"],
+    queryFn: getAllArenas,
+  });
+}
+
+export function usePublicCourtsByArena(arenaId: number | null) {
+  return useQuery<Court[], Error>({
+    queryKey: ["courts", arenaId],
+    queryFn: () => getAllCourtsByArena(arenaId!),
+    enabled: !!arenaId,
+  });
+}
+
+export function usePublicSchedulesByCourt(courtId: number | null) {
+  return useQuery<Schedule[], Error>({
+    queryKey: ["schedules", courtId],
+    queryFn: () => getAllSchedulesByCourt(courtId!),
+    enabled: !!courtId,
+  });
+}
+
+export function usePublicSchedulesByCourts(courts: Court[], enabled: boolean = true) {
+  const schedulesQueries = useQueries({
+    queries: (courts || []).map((c) => ({
+      queryKey: ["schedules", c.id],
+      queryFn: () => getAllSchedulesByCourt(c.id),
+      enabled,
+    })),
+  });
+
+  const schedules = useMemo(() => {
+    return schedulesQueries.flatMap((q: any) => q.data || []);
+  }, [schedulesQueries]);
+
+  return {
+    schedules,
+    schedulesQueries,
+  };
+}
+
+// ============================================================================
+// Derived State Hooks
+// ============================================================================
+
+export function usePublicArenasFiltering(
+  arenas: Arena[],
+  searchQuery: string,
+  selectedCity: string | null,
+) {
+  const filteredArenas = useMemo(() => {
+    let filtered = arenas;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (arena) =>
+          arena.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          arena.city.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (selectedCity) {
+      filtered = filtered.filter((arena) => arena.city === selectedCity);
+    }
+
+    return filtered;
+  }, [searchQuery, selectedCity, arenas]);
+
+  const cities = useMemo(() => {
+    return Array.from(new Set(arenas.map((a) => a.city))).sort();
+  }, [arenas]);
+
+  return {
+    filteredArenas,
+    cities,
+  };
+}
+
+export function useDatePills() {
+  return useMemo(() => {
+    const base = dayjs().startOf("day");
+
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = base.add(i, "day");
+      return {
+        label: `${d.format("DD")} ${d.format("ddd").toUpperCase()}`,
+        iso: d.format("YYYY-MM-DD"),
+      };
+    });
+  }, []);
+}
+
+export function useScheduleMapping(
+  schedules: Schedule[],
+  reservedScheduleIds: number[],
+  selectedDateIndex: number,
+  datePills: Array<{ iso: string; label: string }>,
+) {
+  return useMemo(() => {
+    const map: Record<number, Schedule[]> = {};
+    const selectedIso = datePills[selectedDateIndex]?.iso;
+
+    if (!selectedIso) return map;
+
+    schedules.forEach((s) => {
+      if (s.date !== selectedIso) return;
+
+      // Filter out already reserved schedules
+      if (reservedScheduleIds.includes(s.id)) return;
+
+      const courtId = s.court_id;
+      if (!courtId) return;
+
+      map[courtId] = map[courtId] || [];
+      map[courtId].push(s);
+    });
+
+    return map;
+  }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
+}

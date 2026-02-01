@@ -3,7 +3,8 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -113,7 +114,7 @@ export default function AdminCourts() {
       setCourtToDelete(null);
     } catch (err: any) {
       console.error("Erro ao excluir quadra:", err);
-      toast.error(err.message || "Erro ao excluir quadra");
+      toast.error(getErrorMessage(err));
     }
   };
 

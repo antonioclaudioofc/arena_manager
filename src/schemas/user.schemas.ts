@@ -37,7 +37,7 @@ export const UserResponseSchema = z.object({
   email: z.email(),
   username: z.string(),
   name: z.string(),
-  role: z.enum(["owner", "client"]),
+  role: z.enum(["owner", "client", "admin"]),
 });
 
 export const UserVerificationSchema = z.object({

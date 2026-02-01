@@ -5,8 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useContext, useEffect } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useContext } from "react";
+import { Navigate } from "react-router";
+import { useRegister, useLogin } from "../hooks/use-auth";
 import { Button } from "../components/Button";
 import {
   Form,
@@ -27,23 +28,11 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
+import { AuthContext } from "../providers/AuthProvider";
+import { UserRequestSchema } from "../schemas/user.schemas";
+import { getErrorMessage } from "../api/http";
 
-const formSchema = z
-  .object({
-    email: z.string().email("E-mail inválido"),
-    username: z.string().min(2, "Campo obrigatório"),
-    name: z.string().min(2, "Campo obrigatório"),
-    password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
-    confirm_password: z
-      .string()
-      .min(6, "A confirmação de senha deve ter no mínimo 6 caracteres"),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    path: ["confirm_password"],
-    message: "As senhas não conferem",
-  });
-
-type AuthSchema = z.infer<typeof formSchema>;
+type AuthSchema = z.infer<typeof UserRequestSchema>;
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
@@ -53,14 +42,10 @@ export default function Register() {
   const [searchParams] = useSearchParams();
   const roleParam = searchParams.get("role");
 
-  useEffect(() => {
-    if (auth.token) {
-      navigate("/");
-    }
-  }, [auth.token, navigate]);
+  if (auth.token) return <Navigate to="/" replace />;
 
   const form = useForm<AuthSchema>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(UserRequestSchema),
     defaultValues: {
       email: "",
       username: "",
@@ -70,61 +55,43 @@ export default function Register() {
     },
   });
 
+  const registerMutation = useRegister();
+  const loginMutation = useLogin();
+
   const onSubmit = async (values: AuthSchema) => {
-    const API_BASE = import.meta.env.VITE_API_BASE;
     setLoading(true);
 
     try {
       const { confirm_password, ...rest } = values;
-      const payload = { ...rest };
 
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Erro ao registar");
-        return;
-      }
+      await registerMutation.mutateAsync(rest as any);
 
       try {
-        const loginBody = new URLSearchParams();
-        loginBody.append("username", rest.username || "");
-        loginBody.append("password", rest.password || "");
-
-        const tokenResponse = await fetch(`${API_BASE}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: loginBody.toString(),
+        const tokenData = await loginMutation.mutateAsync({
+          username: rest.username as string,
+          password: rest.password as string,
         });
-
-        const tokenData = await tokenResponse.json();
-
-        if (!tokenResponse.ok) {
-          toast.success("Conta criada. Por favor faça login.");
-          navigate("/login");
-          return;
-        }
 
         if (tokenData?.access_token) {
           try {
-            auth.login(tokenData.access_token);
+            await auth.login(tokenData.access_token);
           } catch {
             localStorage.setItem("access_token", tokenData.access_token);
           }
+
+          toast.success("Registrado e autenticado com sucesso!");
+
+          if (roleParam === "owner") {
+            navigate("/owner/arenas?newArena=true");
+          } else {
+            navigate("/");
+          }
+
+          return;
         }
 
-        toast.success("Registrado e autenticado com sucesso!");
-
-        if (roleParam === "owner") {
-          navigate("/owner/arenas?newArena=true");
-        } else {
-          navigate("/");
-        }
+        toast.success("Conta criada. Por favor faça login.");
+        navigate("/login");
       } catch (loginErr: any) {
         console.error("Auto-login falhou:", loginErr);
         toast.success("Conta criada. Por favor faça login.");
@@ -132,7 +99,7 @@ export default function Register() {
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err);
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

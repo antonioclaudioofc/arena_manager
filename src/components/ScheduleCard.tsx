@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
+import { getErrorMessage } from "../api/http";
 import {
   Dialog,
   DialogHeader,
@@ -61,7 +62,7 @@ export default function ScheduleCard({
       onReservationSuccess?.();
     } catch (err: any) {
       console.error("Erro ao fazer reserva:", err);
-      toast.error(err.message || "Erro ao fazer reserva");
+      toast.error(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

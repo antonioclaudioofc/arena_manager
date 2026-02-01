@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
 import logo from "../assets/logo.svg";
 import {
   Sidebar,
@@ -20,6 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./Sidebar";
+import { AuthContext } from "../providers/AuthProvider";
 
 const adminItems = [
   {
@@ -114,9 +114,7 @@ export function AppSidebar() {
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-800 text-sm">
-                {user.name}
-              </p>
+              <p className="font-semibold text-gray-800 text-sm">{user.name}</p>
               <p className="text-gray-500 text-xs truncate w-full">
                 {user.email}
               </p>

@@ -1,6 +1,6 @@
 import { useContext, type ReactNode } from "react";
 import { Navigate } from "react-router";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 
 export default function OwnerRoute({ children }: { children: ReactNode }) {

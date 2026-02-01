@@ -11,3 +11,12 @@ http.interceptors.request.use((config) => {
   }
   return config;
 });
+
+export function getErrorMessage(error: any): string {
+  return (
+    error?.response?.data?.detail ||
+    error?.response?.data?.message ||
+    error?.message ||
+    "Erro inesperado"
+  );
+}

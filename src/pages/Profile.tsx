@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../providers/AuthProvider";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Building2, MoveLeft } from "lucide-react";
 import logo from "../assets/logo.svg";

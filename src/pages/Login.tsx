@@ -4,9 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../components/Button";
-import { useState, useContext } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
 import {
   Form,
   FormField,
@@ -15,60 +14,49 @@ import {
   FormControl,
   FormMessage,
 } from "../components/Form";
+import { Navigate } from "react-router";
+import { useLogin } from "../hooks/use-auth";
 import { Input } from "../components/Input";
 import logo from "../assets/logo.svg";
 import { MoveLeft, LogIn, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router";
+import { AuthContext } from "../providers/AuthProvider";
+import { UserLoginSchema } from "../schemas/user.schemas";
+import { getErrorMessage } from "../api/http";
 
-const formSchema = z.object({
-  username: z.string().min(2, "Campo obrigatório"),
-  password: z.string().min(2, "Campo obrigatório"),
-});
-
-type LoginSchema = z.infer<typeof formSchema>;
+type LoginSchema = z.infer<typeof UserLoginSchema>;
 
 export default function Login() {
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
   const form = useForm<LoginSchema>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(UserLoginSchema),
     defaultValues: { username: "", password: "" },
   });
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const loginMutation = useLogin();
+  const loading = loginMutation.status === "pending";
+
+  if (auth.token) return <Navigate to="/" replace />;
 
   const handleDemoLogin = async (username: string, password: string) => {
-    setLoading(true);
-
     try {
-      const body = new URLSearchParams();
-      body.append("username", username);
-      body.append("password", password);
+      const data = await loginMutation.mutateAsync({ username, password });
 
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString(),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Erro ao entrar");
+      if (!data || !data.access_token) {
+        toast.error("Erro ao entrar");
         return;
       }
 
       toast.success("Login realizado com sucesso!");
-      auth.login(data.access_token);
-    } catch (err) {
+      await auth.login(data.access_token);
+      navigate("/");
+    } catch (err: any) {
       console.error(err);
-      toast.error("Erro ao conectar com o servidor");
-    } finally {
-      setLoading(false);
+      toast.error(getErrorMessage(err));
     }
   };
 

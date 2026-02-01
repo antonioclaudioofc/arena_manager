@@ -1,7 +1,14 @@
-import { useMemo, useState, useEffect, useContext, useCallback } from "react";
+import { useState, useContext } from "react";
+import {
+  usePublicArenas,
+  usePublicCourtsByArena,
+  usePublicSchedulesByCourts,
+  usePublicArenasFiltering,
+  useDatePills,
+  useScheduleMapping,
+} from "../hooks/use-public";
+import { useUserReservations } from "../hooks/use-reservation";
 import CourtList from "../components/CourtList";
-import { toast } from "sonner";
-import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router";
 import {
   Building2,
@@ -18,188 +25,59 @@ import { Button } from "../components/Button";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import { capitalizeWords } from "../utils/capitalizeWords";
+import { AuthContext } from "../providers/AuthProvider";
+import type { Arena } from "../types/arena";
 
 dayjs.locale("pt-br");
 
-interface Arena {
-  id: number;
-  name: string;
-  city: string;
-  address: string;
-}
-
 export default function Home() {
-  const [arenas, setArenas] = useState<Arena[]>([]);
   const [selectedArena, setSelectedArena] = useState<Arena | null>(null);
   const [arenaView, setArenaView] = useState<"list" | "detail">("list");
-  const [courts, setCourts] = useState<any[]>([]);
-  const [schedules, setSchedules] = useState<any[]>([]);
-  const [reservedScheduleIds, setReservedScheduleIds] = useState<number[]>([]);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [filteredArenas, setFilteredArenas] = useState<Arena[]>([]);
+
+  const { data: arenas = [] } = usePublicArenas();
 
   const { token, user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const { filteredArenas, cities } = usePublicArenasFiltering(
+    arenas,
+    searchQuery,
+    selectedCity,
+  );
 
-  useEffect(() => {
-    const fetchArenas = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/public/arenas`);
-        if (!response.ok) throw new Error("Erro ao buscar arenas");
+  const { data: reservations = [], refetch: refetchReservations } =
+    useUserReservations(!!token);
 
-        const data = await response.json();
-        setArenas(data);
-        setFilteredArenas(data);
-      } catch (err) {
-        console.error("Erro ao carregar arenas:", err);
-        toast.error("Erro ao carregar arenas");
-      }
-    };
+  const reservedScheduleIds = (reservations || [])
+    .map((r: any) => r.schedule_id)
+    .filter(Boolean);
 
-    fetchArenas();
-  }, [API_BASE]);
+  const { data: courts = [], refetch: refetchCourts } = usePublicCourtsByArena(
+    selectedArena?.id || null,
+  );
 
-  useEffect(() => {
-    let filtered = arenas;
+  const { schedules, schedulesQueries } = usePublicSchedulesByCourts(
+    courts as any[],
+    !!selectedArena,
+  );
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (arena) =>
-          arena.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          arena.city.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
+  const datePills = useDatePills();
 
-    if (selectedCity) {
-      filtered = filtered.filter((arena) => arena.city === selectedCity);
-    }
+  const scheduleMap = useScheduleMapping(
+    schedules,
+    reservedScheduleIds,
+    selectedDateIndex,
+    datePills,
+  );
 
-    setFilteredArenas(filtered);
-  }, [searchQuery, selectedCity, arenas]);
-
-  const cities = useMemo(() => {
-    return Array.from(new Set(arenas.map((a) => a.city))).sort();
-  }, [arenas]);
-
-  const fetchReservedSchedules = useCallback(async () => {
-    if (!token) {
-      setReservedScheduleIds([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/reservations/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        setReservedScheduleIds([]);
-        return;
-      }
-
-      const reservations = await response.json();
-      const ids = reservations.map((r: any) => r.schedule_id).filter(Boolean);
-      setReservedScheduleIds(ids);
-    } catch (err) {
-      console.error("Erro ao buscar reservas:", err);
-      setReservedScheduleIds([]);
-    }
-  }, [token, API_BASE]);
-
-  useEffect(() => {
-    if (!selectedArena) return;
-
-    const fetchCourtsAndSchedules = async () => {
-      try {
-        const courtsResponse = await fetch(
-          `${API_BASE}/public/arenas/${selectedArena.id}/courts`,
-        );
-        if (!courtsResponse.ok) throw new Error("Erro ao buscar quadras");
-
-        const courtsData = await courtsResponse.json();
-        setCourts(courtsData);
-
-        const allSchedules: any[] = [];
-        for (const court of courtsData) {
-          const schedulesResponse = await fetch(
-            `${API_BASE}/public/courts/${court.id}/schedules`,
-          );
-          if (schedulesResponse.ok) {
-            const scheduleData = await schedulesResponse.json();
-            allSchedules.push(...scheduleData);
-          }
-        }
-        setSchedules(allSchedules);
-
-        await fetchReservedSchedules();
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-        toast.error("Erro ao carregar dados");
-      }
-    };
-
-    fetchCourtsAndSchedules();
-  }, [selectedArena, API_BASE, fetchReservedSchedules]);
-
-  const datePills = useMemo(() => {
-    const base = dayjs().startOf("day");
-
-    return Array.from({ length: 7 }).map((_, i) => {
-      const d = base.add(i, "day");
-      return {
-        label: `${d.format("DD")} ${d.format("ddd").toUpperCase()}`,
-        iso: d.format("YYYY-MM-DD"),
-      };
-    });
-  }, []);
-
-  const scheduleMap = useMemo(() => {
-    const map: Record<number, any[]> = {};
-    const selectedIso = datePills[selectedDateIndex]?.iso;
-
-    if (!selectedIso) return map;
-
-    schedules.forEach((s) => {
-      if (s.date !== selectedIso) return;
-
-      const isAvailable = s.is_available && !reservedScheduleIds.includes(s.id);
-      if (!isAvailable) return;
-
-      const courtId = s.court_id;
-      if (!courtId) return;
-
-      map[courtId] = map[courtId] || [];
-      map[courtId].push(s);
-    });
-
-    return map;
-  }, [schedules, selectedDateIndex, datePills, reservedScheduleIds]);
-
-  const refetchData = useCallback(() => {
-    if (selectedArena) {
-      const fetchData = async () => {
-        const allSchedules: any[] = [];
-        for (const court of courts) {
-          const schedulesResponse = await fetch(
-            `${API_BASE}/public/courts/${court.id}/schedules`,
-          );
-          if (schedulesResponse.ok) {
-            const scheduleData = await schedulesResponse.json();
-            allSchedules.push(...scheduleData);
-          }
-        }
-        setSchedules(allSchedules);
-        await fetchReservedSchedules();
-      };
-      fetchData();
-    }
-  }, [selectedArena, courts, API_BASE, fetchReservedSchedules]);
+  const refetchData = () => {
+    schedulesQueries.forEach((q: any) => q.refetch && q.refetch());
+    refetchReservations && refetchReservations();
+    refetchCourts && refetchCourts();
+  };
 
   const handleSelectArena = (arena: Arena) => {
     setSelectedArena(arena);
