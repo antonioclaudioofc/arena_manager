@@ -11,6 +11,11 @@ const getUserReservations = async (): Promise<Reservation[]> => {
   return data;
 };
 
+const getOwnerReservations = async (): Promise<Reservation[]> => {
+  const { data } = await http.get("/reservations/me");
+  return data;
+};
+
 const deleteReservation = async (id: number): Promise<void> => {
   await http.delete(`/reservations/${id}`);
 };
@@ -23,6 +28,14 @@ export function useUserReservations(enabled: boolean = true) {
   return useQuery<Reservation[], Error>({
     queryKey: ["reservations"],
     queryFn: getUserReservations,
+    enabled,
+  });
+}
+
+export function useOwnerReservations(enabled: boolean = true) {
+  return useQuery<Reservation[], Error>({
+    queryKey: ["owner", "reservations"],
+    queryFn: getOwnerReservations,
     enabled,
   });
 }

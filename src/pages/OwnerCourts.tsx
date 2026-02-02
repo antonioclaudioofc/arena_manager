@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
@@ -10,7 +10,15 @@ import {
   DialogTrigger,
 } from "../components/Dialog";
 import { Input } from "../components/Input";
-import { Label } from "../components/Label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/Form";
+import { useForm } from "react-hook-form";
 import {
   Select,
   SelectContent,
@@ -18,190 +26,138 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/Select";
-import { AuthContext } from "../providers/AuthProvider";
-
-interface Arena {
-  id: number;
-  name: string;
-  city: string;
-}
-
-interface Court {
-  id: number;
-  name: string;
-  arena_id: number;
-  sports_type: string;
-  price_per_hour: number;
-}
+import {
+  useOwnerArenas,
+  useOwnerCourtsByArena,
+  useCreateOwnerCourt,
+  useUpdateOwnerCourt,
+  useDeleteOwnerCourt,
+} from "../hooks/use-owner";
+import type { Court, CourtRequest, CourtUpdate } from "../types/court";
+import { capitalizeWords } from "../utils/capitalizeWords";
 
 export default function OwnerCourts() {
-  const { token } = useContext(AuthContext);
-  const [arenas, setArenas] = useState<Arena[]>([]);
-  const [selectedArena, setSelectedArena] = useState<number | null>(null);
-  const [courts, setCourts] = useState<Court[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: arenas = [],
+    isLoading: arenasLoading,
+    isError: arenasError,
+  } = useOwnerArenas();
+  const [formSelectedArena, setFormSelectedArena] = useState<number | null>(
+    null,
+  );
+
+  const {
+    data: courts = [],
+    isLoading: courtsLoading,
+    isError: courtsError,
+    refetch: refetchCourts,
+  } = useOwnerCourtsByArena(formSelectedArena);
+
+  const { mutate: createCourt, isPending: isCreating } = useCreateOwnerCourt();
+  const { mutate: updateCourt, isPending: isUpdating } = useUpdateOwnerCourt();
+  const { mutate: deleteCourt, isPending: isDeleting } = useDeleteOwnerCourt();
+
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCourt, setEditingCourt] = useState<Court | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    sports_type: "",
-    price_per_hour: "",
+  const [courtToDelete, setCourtToDelete] = useState<Court | null>(null);
+
+  const form = useForm({
+    defaultValues: {
+      arena_id: "",
+      name: "",
+      sports_type: "",
+      price_per_hour: "",
+    },
+    mode: "onChange",
   });
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
-
   useEffect(() => {
-    const fetchArenas = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/arenas/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setArenas(data);
-          if (data.length > 0) {
-            setSelectedArena(data[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Erro ao buscar arenas:", err);
-        toast.error("Erro ao carregar arenas");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchArenas();
-  }, [token]);
-
-  useEffect(() => {
-    if (selectedArena) {
-      fetchCourts(selectedArena);
+    if (!formSelectedArena && arenas.length > 0) {
+      setFormSelectedArena(arenas[0].id);
     }
-  }, [selectedArena]);
+  }, [arenas, formSelectedArena]);
 
-  const fetchCourts = async (arenaId: number) => {
-    try {
-      const response = await fetch(`${API_BASE}/courts/${arenaId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  useEffect(() => {
+    if (dialogOpen && !editingCourt) {
+      form.reset({
+        arena_id: "",
+        name: "",
+        sports_type: "",
+        price_per_hour: "",
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCourts(data);
-      } else {
-        setCourts([]);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar quadras:", err);
-      toast.error("Erro ao carregar quadras");
     }
-  };
+  }, [dialogOpen, editingCourt, form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.sports_type || !formData.price_per_hour) {
-      toast.error("Todos os campos são obrigatórios");
-      return;
-    }
-
-    if (!selectedArena) {
+  const handleSubmit = (data: any) => {
+    const arenaId = Number(data.arena_id);
+    if (!arenaId) {
       toast.error("Selecione uma arena");
       return;
     }
 
-    try {
-      if (editingCourt) {
-        // Atualizar quadra existente
-        const response = await fetch(`${API_BASE}/courts/${editingCourt.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            sports_type: formData.sports_type,
-            price_per_hour: parseFloat(formData.price_per_hour),
-          }),
-        });
-
-        if (response.ok) {
-          toast.success("Quadra atualizada com sucesso");
-          fetchCourts(selectedArena);
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao atualizar quadra");
-        }
-      } else {
-        // Criar nova quadra
-        const response = await fetch(`${API_BASE}/courts/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            arena_id: selectedArena,
-            name: formData.name,
-            sports_type: formData.sports_type,
-            price_per_hour: parseFloat(formData.price_per_hour),
-          }),
-        });
-
-        if (response.ok) {
-          toast.success("Quadra criada com sucesso");
-          fetchCourts(selectedArena);
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao criar quadra");
-        }
-      }
-    } catch (err) {
-      console.error("Erro:", err);
-      toast.error("Erro ao salvar quadra");
-    }
-  };
-
-  const handleDelete = async (courtId: number) => {
-    if (!confirm("Tem certeza que deseja deletar esta quadra? Todos os horários e reservas serão removidos.")) {
+    const price = Number(data.price_per_hour);
+    if (!data.name || !data.sports_type || Number.isNaN(price)) {
+      toast.error("Todos os campos são obrigatórios");
       return;
     }
 
-    try {
-      const response = await fetch(`${API_BASE}/courts/${courtId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+    if (editingCourt) {
+      const payload: CourtUpdate = {
+        name: data.name,
+        sports_type: data.sports_type,
+        price_per_hour: price,
+      };
+      updateCourt(
+        { id: editingCourt.id, payload },
+        {
+          onSuccess: () => {
+            toast.success("Quadra atualizada com sucesso!");
+            handleCloseDialog();
+          },
         },
-      });
-
-      if (response.ok) {
-        toast.success("Quadra deletada com sucesso");
-        if (selectedArena) {
-          fetchCourts(selectedArena);
-        }
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || "Erro ao deletar quadra");
-      }
-    } catch (err) {
-      console.error("Erro:", err);
-      toast.error("Erro ao deletar quadra");
+      );
+      return;
     }
+
+    const payload: CourtRequest = {
+      arena_id: arenaId,
+      name: data.name,
+      sports_type: data.sports_type,
+      price_per_hour: price,
+    };
+
+    createCourt(payload, {
+      onSuccess: () => {
+        setFormSelectedArena(arenaId);
+        refetchCourts();
+        toast.success("Quadra criada com sucesso!");
+        handleCloseDialog();
+      },
+    });
+  };
+
+  const handleDelete = (court: Court) => {
+    setCourtToDelete(court);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!courtToDelete) return;
+    deleteCourt(courtToDelete.id, {
+      onSuccess: () => {
+        toast.success("Quadra deletada com sucesso!");
+        setDeleteDialogOpen(false);
+        setCourtToDelete(null);
+        refetchCourts();
+      },
+    });
   };
 
   const handleEdit = (court: Court) => {
     setEditingCourt(court);
-    setFormData({
+    form.reset({
+      arena_id: court.arena_id?.toString() || "",
       name: court.name,
       sports_type: court.sports_type,
       price_per_hour: court.price_per_hour.toString(),
@@ -212,13 +168,31 @@ export default function OwnerCourts() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingCourt(null);
-    setFormData({ name: "", sports_type: "", price_per_hour: "" });
+    form.reset({ arena_id: "", name: "", sports_type: "", price_per_hour: "" });
   };
 
-  if (loading) {
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setCourtToDelete(null);
+  };
+
+  if (arenasLoading || courtsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  if (arenasError || courtsError) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-8 text-center">
+        <p className="text-gray-700 text-lg font-medium">
+          Não foi possível carregar as quadras
+        </p>
+        <p className="text-gray-500 text-sm mt-2">
+          Tente novamente em alguns instantes.
+        </p>
       </div>
     );
   }
@@ -242,100 +216,175 @@ export default function OwnerCourts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Quadras</h2>
-          <p className="text-gray-600 mt-2">Gerencie as quadras das suas arenas</p>
+          <p className="text-gray-600 mt-2">
+            Gerencie as quadras das suas arenas
+          </p>
         </div>
-        <div className="flex gap-4 items-center">
-          <Select
-            value={selectedArena?.toString()}
-            onValueChange={(value) => setSelectedArena(parseInt(value))}
-          >
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Selecione uma arena" />
-            </SelectTrigger>
-            <SelectContent>
-              {arenas.map((arena) => (
-                <SelectItem key={arena.id} value={arena.id.toString()}>
-                  {arena.name} - {arena.city}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Nova Quadra
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCourt ? "Editar Quadra" : "Nova Quadra"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Nome da Quadra</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="Ex: Quadra 1"
-                    required
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2 p-4 w-max">
+              <Plus className="h-4 w-4" />
+              Adicionar Quadra
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCourt ? "Editar Quadra" : "Nova Quadra"}
+              </DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4"
+              >
+                {!editingCourt && (
+                  <FormField
+                    control={form.control}
+                    name="arena_id"
+                    rules={{ required: "Arena é obrigatória" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Arena</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setFormSelectedArena(Number(value));
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma arena" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {arenas.map((arena) => (
+                              <SelectItem
+                                key={arena.id}
+                                value={arena.id.toString()}
+                              >
+                                {capitalizeWords(arena.name)} -{" "}
+                                {capitalizeWords(arena.city)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="sports_type">Tipo de Esporte</Label>
-                  <Input
-                    id="sports_type"
-                    value={formData.sports_type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, sports_type: e.target.value })
-                    }
-                    placeholder="Ex: Futebol, Vôlei, Basquete"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="price_per_hour">Preço por Hora (R$)</Label>
-                  <Input
-                    id="price_per_hour"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price_per_hour}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        price_per_hour: e.target.value,
-                      })
-                    }
-                    placeholder="Ex: 100.00"
-                    required
-                  />
-                </div>
+                )}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  rules={{ required: "Nome da quadra é obrigatório" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Quadra</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: Quadra 1" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="sports_type"
+                  rules={{ required: "Tipo de esporte é obrigatório" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Esporte</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Ex: Futebol, Vôlei, Basquete"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="price_per_hour"
+                  rules={{ required: "Preço é obrigatório" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preço por Hora (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ex: 100.00"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="flex gap-2 justify-end">
                   <Button
-                    type="button"
                     variant="secondary"
                     onClick={handleCloseDialog}
+                    disabled={isCreating || isUpdating}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    {editingCourt ? "Atualizar" : "Criar"}
+                  <Button disabled={isCreating || isUpdating}>
+                    {isUpdating
+                      ? "Atualizando..."
+                      : isCreating
+                        ? "Criando..."
+                        : editingCourt
+                          ? "Atualizar"
+                          : "Criar"}
                   </Button>
                 </div>
               </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>
+              Tem certeza que deseja deletar a quadra
+              {courtToDelete ? ` "${courtToDelete.name}"` : ""}?
+            </p>
+            <p className="text-red-600">
+              Todos os horários e reservas serão removidos.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={handleCloseDeleteDialog}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {courts.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -343,61 +392,55 @@ export default function OwnerCourts() {
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             Nenhuma quadra cadastrada
           </h3>
-          <p className="text-gray-600 mb-6">
-            Comece criando a primeira quadra desta arena
-          </p>
+          <p className="text-gray-600 mb-6">Comece adicionando uma quadra</p>
           <Button
             onClick={() => setDialogOpen(true)}
             className="flex items-center gap-2 mx-auto"
           >
             <Plus className="h-5 w-5" />
-            Criar Primeira Quadra
+            Adicionar Quadra
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {courts.map((court) => (
             <div
               key={court.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-gray-100"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-3 rounded-lg">
-                    <Trophy className="h-6 w-6 text-blue-600" />
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <Trophy className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {court.name}
+                    <h3 className="font-semibold text-gray-900">
+                      {capitalizeWords(court.name)}
                     </h3>
+                    <p className="text-sm text-gray-500">
+                      {capitalizeWords(court.sports_type)}
+                    </p>
                   </div>
                 </div>
-              </div>
-              <div className="space-y-2 mb-4">
-                <p className="text-gray-600 text-sm">
-                  <span className="font-medium">Esporte:</span>{" "}
-                  {court.sports_type}
-                </p>
-                <p className="text-gray-900 text-lg font-semibold">
-                  R$ {court.price_per_hour.toFixed(2)}/hora
+                <p className="text-sm font-semibold text-gray-900">
+                  R$ {court.price_per_hour.toFixed(2)}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">
                 <Button
                   variant="secondary"
-                  size="sm"
-                  className="flex-1"
                   onClick={() => handleEdit(court)}
+                  disabled={isUpdating || isDeleting}
                 >
-                  <Pencil className="h-4 w-4 mr-1" />
+                  <Pencil className="h-3 w-3 mr-1" />
                   Editar
                 </Button>
                 <Button
                   variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(court.id)}
+                  onClick={() => handleDelete(court)}
+                  disabled={isDeleting || isUpdating}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             </div>

@@ -377,7 +377,11 @@ export default function Home() {
                 className="w-full md:w-auto flex items-center gap-2 whitespace-nowrap"
               >
                 <Building2 size={20} />
-                {!user ? "Criar Arena" : user.role === "client" ? "Cadastrar Arena" : "Gerenciar Arenas"}
+                {!user
+                  ? "Criar Arena"
+                  : user.role === "client"
+                    ? "Cadastrar Arena"
+                    : "Gerenciar Arenas"}
               </Button>
             </div>
           </div>
