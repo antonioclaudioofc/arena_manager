@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { ArrowLeft, Building2, MoveLeft } from "lucide-react";
 import logo from "../assets/logo.svg";
 import { Button } from "../components/Button";
+import { capitalizeWords } from "../utils/capitalizeWords";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default function Profile() {
               </div>
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-900 max-md:text-xl">
-                  {user.name}
+                  {capitalizeWords(user.name)}
                 </h2>
                 <p className="text-gray-600 mt-1">{user.email}</p>
               </div>
@@ -86,7 +87,7 @@ export default function Profile() {
             <div>
               <p className="text-sm text-gray-600">Nome Completo</p>
               <p className="text-lg font-medium text-gray-900 max-md:text-base">
-                {user?.name}
+                {capitalizeWords(user!.name)}
               </p>
             </div>
             <div>
@@ -119,7 +120,7 @@ export default function Profile() {
                   quadras e horários. É simples e rápido!
                 </p>
                 <Button
-                  onClick={() => navigate("/owner/arenas")}
+                  onClick={() => navigate("/become-owner")}
                   className="flex items-center gap-2"
                 >
                   <Building2 className="h-5 w-5" />

@@ -161,7 +161,7 @@ export default function OwnerSchedules() {
   const fetchSchedules = async (courtId: number) => {
     try {
       const response = await fetch(
-        `${API_BASE}/public/courts/${courtId}/schedules`,
+        `${API_BASE}/catalog/courts/${courtId}/schedules`,
       );
 
       if (response.ok) {

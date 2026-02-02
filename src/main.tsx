@@ -28,6 +28,7 @@ import OwnerHome from "./pages/OwnerHome";
 import OwnerArenas from "./pages/OwnerArenas";
 import OwnerCourts from "./pages/OwnerCourts";
 import OwnerSchedules from "./pages/OwnerSchedules";
+import BecomeOwner from "./pages/BecomeOwner";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./providers/AuthProvider";
@@ -91,6 +92,14 @@ createRoot(document.getElementById("root")!).render(
               <UserRoute>
                 <Reservations />
               </UserRoute>
+            }
+          />
+          <Route
+            path="/become-owner"
+            element={
+              <AuthenticatedRoute>
+                <BecomeOwner />
+              </AuthenticatedRoute>
             }
           />
           <Route

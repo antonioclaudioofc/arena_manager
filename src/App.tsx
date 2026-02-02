@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "./components/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "./components/Avatar";
+import { useUserReservations } from "./hooks/use-reservation";
+import { capitalizeWords } from "./utils/capitalizeWords";
 
 export default function App() {
   const auth = useContext(AuthContext);
@@ -21,6 +23,13 @@ export default function App() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch reservations only if user is authenticated
+  const { data: reservations = [] } = useUserReservations();
+
+  // Show reservations link if user is client OR if owner/admin has reservations
+  const showReservationsLink =
+    auth.user?.role === "client" || (auth.user && reservations.length > 0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -118,7 +127,7 @@ export default function App() {
 
                       <div className="flex flex-col items-start">
                         <h5 className="font-medium text-gray-800">
-                          {auth.user.name}
+                          {capitalizeWords(auth.user.name)}
                         </h5>
                         <p className="text-xs text-gray-500 max-md:hidden">
                           {auth.user.email}
@@ -146,19 +155,22 @@ export default function App() {
                             <span className="font-medium">Perfil</span>
                           </button>
                         </li>
-
-                        <li>
-                          <button
-                            onClick={() => {
-                              navigate("/user/reservations");
-                              setIsOpenDropdown(false);
-                            }}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 transition-colors cursor-pointer"
-                          >
-                            <Volleyball className="h-5 w-5" />
-                            <span className="font-medium">Minhas Reservas</span>
-                          </button>
-                        </li>
+                        {showReservationsLink && (
+                          <li>
+                            <button
+                              onClick={() => {
+                                navigate("/user/reservations");
+                                setIsOpenDropdown(false);
+                              }}
+                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 transition-colors cursor-pointer"
+                            >
+                              <Volleyball className="h-5 w-5" />
+                              <span className="font-medium">
+                                Minhas Reservas
+                              </span>
+                            </button>
+                          </li>
+                        )}
 
                         <li className="border-t border-gray-200">
                           <button

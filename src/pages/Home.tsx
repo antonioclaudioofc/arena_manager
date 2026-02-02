@@ -1,12 +1,12 @@
 import { useState, useContext } from "react";
 import {
-  usePublicArenas,
-  usePublicCourtsByArena,
-  usePublicSchedulesByCourts,
-  usePublicArenasFiltering,
+  useCatalogArenas,
+  useCatalogCourtsByArena,
+  useCatalogSchedulesByCourts,
+  useCatalogArenasFiltering,
   useDatePills,
   useScheduleMapping,
-} from "../hooks/use-public";
+} from "../hooks/use-catalog";
 import { useUserReservations } from "../hooks/use-reservation";
 import CourtList from "../components/CourtList";
 import { useNavigate } from "react-router";
@@ -37,12 +37,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
-  const { data: arenas = [] } = usePublicArenas();
+  const { data: arenas = [] } = useCatalogArenas();
 
   const { token, user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const { filteredArenas, cities } = usePublicArenasFiltering(
+  const { filteredArenas, cities } = useCatalogArenasFiltering(
     arenas,
     searchQuery,
     selectedCity,
@@ -55,11 +55,11 @@ export default function Home() {
     .map((r: any) => r.schedule_id)
     .filter(Boolean);
 
-  const { data: courts = [], refetch: refetchCourts } = usePublicCourtsByArena(
+  const { data: courts = [], refetch: refetchCourts } = useCatalogCourtsByArena(
     selectedArena?.id || null,
   );
 
-  const { schedules, schedulesQueries } = usePublicSchedulesByCourts(
+  const { schedules, schedulesQueries } = useCatalogSchedulesByCourts(
     courts as any[],
     !!selectedArena,
   );
@@ -364,12 +364,20 @@ export default function Home() {
                 </div>
               </div>
               <Button
-                onClick={() => navigate("/register?role=owner")}
+                onClick={() => {
+                  if (!user) {
+                    navigate("/register");
+                  } else if (user.role === "client") {
+                    navigate("/become-owner");
+                  } else {
+                    navigate("/owner");
+                  }
+                }}
                 variant="default"
                 className="w-full md:w-auto flex items-center gap-2 whitespace-nowrap"
               >
                 <Building2 size={20} />
-                Criar Arena
+                {!user ? "Criar Arena" : user.role === "client" ? "Cadastrar Arena" : "Gerenciar Arenas"}
               </Button>
             </div>
           </div>

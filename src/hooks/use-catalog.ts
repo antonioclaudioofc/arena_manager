@@ -6,22 +6,22 @@ import type { Schedule } from "../types/schedule";
 import { useMemo } from "react";
 import dayjs from "dayjs";
 
-// ============================================================================
+// ===========================================================================
 // API Functions
 // ============================================================================
 
 const getAllArenas = async (): Promise<Arena[]> => {
-  const { data } = await http.get("/public/arenas");
+  const { data } = await http.get("/catalog/arenas");
   return data;
 };
 
 const getAllCourtsByArena = async (arenaId: number): Promise<Court[]> => {
-  const { data } = await http.get(`/public/arenas/${arenaId}/courts`);
+  const { data } = await http.get(`/catalog/arenas/${arenaId}/courts`);
   return data;
 };
 
 const getAllSchedulesByCourt = async (courtId: number): Promise<Schedule[]> => {
-  const { data } = await http.get(`/public/courts/${courtId}/schedules`);
+  const { data } = await http.get(`/catalog/courts/${courtId}/schedules`);
   return data;
 };
 
@@ -29,14 +29,14 @@ const getAllSchedulesByCourt = async (courtId: number): Promise<Schedule[]> => {
 // React Query Hooks
 // ============================================================================
 
-export function usePublicArenas() {
+export function useCatalogArenas() {
   return useQuery<Arena[], Error>({
     queryKey: ["arenas"],
     queryFn: getAllArenas,
   });
 }
 
-export function usePublicCourtsByArena(arenaId: number | null) {
+export function useCatalogCourtsByArena(arenaId: number | null) {
   return useQuery<Court[], Error>({
     queryKey: ["courts", arenaId],
     queryFn: () => getAllCourtsByArena(arenaId!),
@@ -44,7 +44,7 @@ export function usePublicCourtsByArena(arenaId: number | null) {
   });
 }
 
-export function usePublicSchedulesByCourt(courtId: number | null) {
+export function useCatalogSchedulesByCourt(courtId: number | null) {
   return useQuery<Schedule[], Error>({
     queryKey: ["schedules", courtId],
     queryFn: () => getAllSchedulesByCourt(courtId!),
@@ -52,7 +52,10 @@ export function usePublicSchedulesByCourt(courtId: number | null) {
   });
 }
 
-export function usePublicSchedulesByCourts(courts: Court[], enabled: boolean = true) {
+export function useCatalogSchedulesByCourts(
+  courts: Court[],
+  enabled: boolean = true,
+) {
   const schedulesQueries = useQueries({
     queries: (courts || []).map((c) => ({
       queryKey: ["schedules", c.id],
@@ -75,7 +78,7 @@ export function usePublicSchedulesByCourts(courts: Court[], enabled: boolean = t
 // Derived State Hooks
 // ============================================================================
 
-export function usePublicArenasFiltering(
+export function useCatalogArenasFiltering(
   arenas: Arena[],
   searchQuery: string,
   selectedCity: string | null,
