@@ -341,20 +341,16 @@ export default function OwnerArenas() {
               <div className="grid grid-cols-2 pt-3 gap-3 border-t border-gray-100">
                 <Button
                   variant="secondary"
-                  size="sm"
                   onClick={() => handleEdit(arena)}
                   disabled={isUpdating || isDeleting}
-                  className="flex-1 text-sm px-2 py-1.5"
                 >
                   <Pencil className="h-4 w-4 mr-1" />
                   Editar
                 </Button>
                 <Button
                   variant="destructive"
-                  size="sm"
                   onClick={() => handleDelete(arena)}
                   disabled={isDeleting || isUpdating}
-                  className="px-2 py-1.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>

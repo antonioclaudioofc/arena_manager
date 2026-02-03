@@ -1,6 +1,7 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarDays, Pencil, Trash2, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { getErrorMessage } from "../api/http";
 import { Button } from "../components/Button";
 import {
   Dialog,
@@ -18,39 +19,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/Select";
-import { AuthContext } from "../providers/AuthProvider";
-
-interface Arena {
-  id: number;
-  name: string;
-}
-
-interface Court {
-  id: number;
-  name: string;
-  arena_id: number;
-}
-
-interface Schedule {
-  id: number;
-  court_id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  court?: {
-    name: string;
-    arena_id: number;
-  };
-}
+import {
+  useOwnerArenas,
+  useOwnerCourtsByArena,
+  useOwnerSchedulesByCourt,
+  useCreateOwnerSchedule,
+  useUpdateOwnerSchedule,
+  useDeleteOwnerSchedule,
+  useBatchOwnerSchedules,
+} from "../hooks/use-owner";
+import { capitalizeWords } from "../utils/capitalizeWords";
+import type { Schedule } from "../types/schedule";
 
 export default function OwnerSchedules() {
-  const { token } = useContext(AuthContext);
-  const [arenas, setArenas] = useState<Arena[]>([]);
+  const { data: arenas = [], isLoading: arenasLoading } = useOwnerArenas();
   const [selectedArena, setSelectedArena] = useState<number | null>(null);
-  const [courts, setCourts] = useState<Court[]>([]);
+  const { data: courts = [], isLoading: courtsLoading } =
+    useOwnerCourtsByArena(selectedArena);
   const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: schedules = [], isLoading: schedulesLoading } =
+    useOwnerSchedulesByCourt(selectedCourt);
+  const [formArenaId, setFormArenaId] = useState<number | null>(null);
+  const [formCourtId, setFormCourtId] = useState<number | null>(null);
+  const { data: formCourts = [] } = useOwnerCourtsByArena(formArenaId);
+
+  const createSchedule = useCreateOwnerSchedule();
+  const updateSchedule = useUpdateOwnerSchedule();
+  const deleteSchedule = useDeleteOwnerSchedule();
+  const batchSchedules = useBatchOwnerSchedules();
+
+  const loading = arenasLoading || courtsLoading || schedulesLoading;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
@@ -68,8 +66,6 @@ export default function OwnerSchedules() {
     weekdays: [] as number[],
     months: [] as number[],
   });
-
-  const API_BASE = import.meta.env.VITE_API_BASE;
 
   const weekdayLabels = [
     { value: 0, label: "Segunda" },
@@ -97,83 +93,38 @@ export default function OwnerSchedules() {
   ];
 
   useEffect(() => {
-    const fetchArenas = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/arenas/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setArenas(data);
-          if (data.length > 0) {
-            setSelectedArena(data[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Erro ao buscar arenas:", err);
-        toast.error("Erro ao carregar arenas");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchArenas();
-  }, [token]);
+    if (!selectedArena && arenas.length > 0) {
+      setSelectedArena(arenas[0].id);
+    }
+  }, [arenas, selectedArena]);
 
   useEffect(() => {
-    if (selectedArena) {
-      fetchCourts(selectedArena);
+    if (!selectedArena) return;
+
+    if (courts.length > 0) {
+      setSelectedCourt((prev) => prev ?? courts[0].id);
+    } else {
+      setSelectedCourt(null);
     }
-  }, [selectedArena]);
+  }, [selectedArena, courts]);
 
   useEffect(() => {
-    if (selectedCourt) {
-      fetchSchedules(selectedCourt);
+    if (!formArenaId && arenas.length > 0) {
+      setFormArenaId(arenas[0].id);
     }
-  }, [selectedCourt]);
+  }, [arenas, formArenaId]);
 
-  const fetchCourts = async (arenaId: number) => {
-    try {
-      const response = await fetch(`${API_BASE}/courts/${arenaId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  useEffect(() => {
+    if (!formArenaId) return;
 
-      if (response.ok) {
-        const data = await response.json();
-        setCourts(data);
-        if (data.length > 0) {
-          setSelectedCourt(data[0].id);
-        }
-      } else {
-        setCourts([]);
-        setSelectedCourt(null);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar quadras:", err);
-    }
-  };
-
-  const fetchSchedules = async (courtId: number) => {
-    try {
-      const response = await fetch(
-        `${API_BASE}/catalog/courts/${courtId}/schedules`,
+    if (formCourts.length > 0) {
+      setFormCourtId((prev) =>
+        formCourts.some((court) => court.id === prev) ? prev : formCourts[0].id,
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        setSchedules(data);
-      } else {
-        setSchedules([]);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar horários:", err);
+    } else {
+      setFormCourtId(null);
     }
-  };
+  }, [formArenaId, formCourts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,60 +134,30 @@ export default function OwnerSchedules() {
       return;
     }
 
-    if (!selectedCourt) {
+    if (!formCourtId) {
       toast.error("Selecione uma quadra");
       return;
     }
 
     try {
       if (editingSchedule) {
-        // Atualizar horário existente
-        const response = await fetch(
-          `${API_BASE}/schedules/${editingSchedule.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(formData),
-          },
-        );
-
-        if (response.ok) {
-          toast.success("Horário atualizado com sucesso");
-          fetchSchedules(selectedCourt);
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao atualizar horário");
-        }
-      } else {
-        // Criar novo horário
-        const response = await fetch(`${API_BASE}/schedules/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            court_id: selectedCourt,
-            ...formData,
-          }),
+        await updateSchedule.mutateAsync({
+          id: editingSchedule.id,
+          payload: formData,
         });
-
-        if (response.ok) {
-          toast.success("Horário criado com sucesso");
-          fetchSchedules(selectedCourt);
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao criar horário");
-        }
+        toast.success("Horário atualizado com sucesso");
+        handleCloseDialog();
+      } else {
+        await createSchedule.mutateAsync({
+          court_id: formCourtId,
+          ...formData,
+        });
+        toast.success("Horário criado com sucesso");
+        handleCloseDialog();
       }
     } catch (err) {
       console.error("Erro:", err);
-      toast.error("Erro ao salvar horário");
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -254,45 +175,29 @@ export default function OwnerSchedules() {
       return;
     }
 
-    if (!selectedCourt) {
+    if (!formCourtId) {
       toast.error("Selecione uma quadra");
       return;
     }
 
     try {
-      const response = await fetch(`${API_BASE}/schedules/batch`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          court_id: selectedCourt,
-          start_date: batchFormData.start_date,
-          end_date: batchFormData.end_date,
-          start_time: batchFormData.start_time,
-          end_time: batchFormData.end_time,
-          interval_minutes: parseInt(batchFormData.interval_minutes),
-          weekdays:
-            batchFormData.weekdays.length > 0
-              ? batchFormData.weekdays
-              : undefined,
-          months:
-            batchFormData.months.length > 0 ? batchFormData.months : undefined,
-        }),
-      });
+      const payload = {
+        court_id: formCourtId,
+        start_date: batchFormData.start_date,
+        end_date: batchFormData.end_date,
+        start_time: batchFormData.start_time,
+        end_time: batchFormData.end_time,
+        interval_minutes: parseInt(batchFormData.interval_minutes),
+        weekdays: batchFormData.weekdays,
+        months: batchFormData.months,
+      };
 
-      if (response.ok) {
-        toast.success("Horários criados em lote com sucesso");
-        fetchSchedules(selectedCourt);
-        handleCloseBatchDialog();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || "Erro ao criar horários em lote");
-      }
+      await batchSchedules.mutateAsync(payload);
+      toast.success("Horários criados em lote com sucesso");
+      handleCloseBatchDialog();
     } catch (err) {
       console.error("Erro:", err);
-      toast.error("Erro ao criar horários em lote");
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -306,25 +211,11 @@ export default function OwnerSchedules() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/schedules/${scheduleId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        toast.success("Horário deletado com sucesso");
-        if (selectedCourt) {
-          fetchSchedules(selectedCourt);
-        }
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || "Erro ao deletar horário");
-      }
+      await deleteSchedule.mutateAsync(scheduleId);
+      toast.success("Horário deletado com sucesso");
     } catch (err) {
       console.error("Erro:", err);
-      toast.error("Erro ao deletar horário");
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -335,7 +226,23 @@ export default function OwnerSchedules() {
       start_time: schedule.start_time,
       end_time: schedule.end_time,
     });
+    setFormArenaId(selectedArena ?? arenas[0]?.id ?? null);
+    setFormCourtId(selectedCourt ?? null);
     setDialogOpen(true);
+  };
+
+  const handleOpenCreateDialog = () => {
+    setEditingSchedule(null);
+    setFormData({ date: "", start_time: "", end_time: "" });
+    setFormArenaId(selectedArena ?? arenas[0]?.id ?? null);
+    setFormCourtId(selectedCourt ?? null);
+    setDialogOpen(true);
+  };
+
+  const handleOpenBatchDialog = () => {
+    setFormArenaId(selectedArena ?? arenas[0]?.id ?? null);
+    setFormCourtId(selectedCourt ?? null);
+    setBatchDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
@@ -430,252 +337,344 @@ export default function OwnerSchedules() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Horários</h2>
-          <p className="text-gray-600 mt-2">Gerencie os horários disponíveis</p>
-        </div>
-        <div className="flex gap-4 items-center flex-wrap">
-          <Select
-            value={selectedArena?.toString()}
-            onValueChange={(value) => setSelectedArena(parseInt(value))}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Selecione arena" />
-            </SelectTrigger>
-            <SelectContent>
-              {arenas.map((arena) => (
-                <SelectItem key={arena.id} value={arena.id.toString()}>
-                  {arena.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={selectedCourt?.toString()}
-            onValueChange={(value) => setSelectedCourt(parseInt(value))}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Selecione quadra" />
-            </SelectTrigger>
-            <SelectContent>
-              {courts.map((court) => (
-                <SelectItem key={court.id} value={court.id.toString()}>
-                  {court.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="secondary" className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Criar em Lote
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Criar Horários em Lote</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleBatchSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="start_date">Data Início</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={batchFormData.start_date}
-                      onChange={(e) =>
-                        setBatchFormData({
-                          ...batchFormData,
-                          start_date: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end_date">Data Fim</Label>
-                    <Input
-                      id="end_date"
-                      type="date"
-                      value={batchFormData.end_date}
-                      onChange={(e) =>
-                        setBatchFormData({
-                          ...batchFormData,
-                          end_date: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="batch_start_time">Hora Início</Label>
-                    <Input
-                      id="batch_start_time"
-                      type="time"
-                      value={batchFormData.start_time}
-                      onChange={(e) =>
-                        setBatchFormData({
-                          ...batchFormData,
-                          start_time: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="batch_end_time">Hora Fim</Label>
-                    <Input
-                      id="batch_end_time"
-                      type="time"
-                      value={batchFormData.end_time}
-                      onChange={(e) =>
-                        setBatchFormData({
-                          ...batchFormData,
-                          end_time: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="interval">Intervalo (min)</Label>
-                    <Input
-                      id="interval"
-                      type="number"
-                      min="1"
-                      value={batchFormData.interval_minutes}
-                      onChange={(e) =>
-                        setBatchFormData({
-                          ...batchFormData,
-                          interval_minutes: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Dias da Semana (opcional)</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {weekdayLabels.map((day) => (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => toggleWeekday(day.value)}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          batchFormData.weekdays.includes(day.value)
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
+      <div className="space-y-4">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Horários</h2>
+            <p className="text-gray-600 mt-2">
+              Gerencie os horários disponíveis
+            </p>
+          </div>
+          <div className="flex gap-2 items-center flex-wrap">
+            <Dialog
+              open={batchDialogOpen}
+              onOpenChange={(open) => {
+                if (!open) handleCloseBatchDialog();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                  onClick={handleOpenBatchDialog}
+                >
+                  <Clock className="h-5 w-5" />
+                  Criar em Lote
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Criar Horários em Lote</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleBatchSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="batch_arena">Arena</Label>
+                      <Select
+                        value={formArenaId?.toString()}
+                        onValueChange={(value) =>
+                          setFormArenaId(parseInt(value))
+                        }
                       >
-                        {day.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label>Meses (opcional)</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {monthLabels.map((month) => (
-                      <button
-                        key={month.value}
-                        type="button"
-                        onClick={() => toggleMonth(month.value)}
-                        className={`px-3 py-1 rounded-md text-sm ${
-                          batchFormData.months.includes(month.value)
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
+                        <SelectTrigger id="batch_arena" className="w-full">
+                          <SelectValue placeholder="Selecione arena" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {arenas.map((arena) => (
+                            <SelectItem
+                              key={arena.id}
+                              value={arena.id.toString()}
+                            >
+                              {capitalizeWords(arena.name)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="batch_court">Quadra</Label>
+                      <Select
+                        value={formCourtId?.toString()}
+                        onValueChange={(value) =>
+                          setFormCourtId(parseInt(value))
+                        }
+                        disabled={!formArenaId || formCourts.length === 0}
                       >
-                        {month.label}
-                      </button>
-                    ))}
+                        <SelectTrigger id="batch_court" className="w-full">
+                          <SelectValue placeholder="Selecione quadra" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formCourts.map((court) => (
+                            <SelectItem
+                              key={court.id}
+                              value={court.id.toString()}
+                            >
+                              {capitalizeWords(court.name)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleCloseBatchDialog}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit">Criar Horários</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Novo Horário
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingSchedule ? "Editar Horário" : "Novo Horário"}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="date">Data</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start_date">Data Início</Label>
+                      <Input
+                        id="start_date"
+                        type="date"
+                        value={batchFormData.start_date}
+                        onChange={(e) =>
+                          setBatchFormData({
+                            ...batchFormData,
+                            start_date: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end_date">Data Fim</Label>
+                      <Input
+                        id="end_date"
+                        type="date"
+                        value={batchFormData.end_date}
+                        onChange={(e) =>
+                          setBatchFormData({
+                            ...batchFormData,
+                            end_date: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="batch_start_time">Hora Início</Label>
+                      <Input
+                        id="batch_start_time"
+                        type="time"
+                        value={batchFormData.start_time}
+                        onChange={(e) =>
+                          setBatchFormData({
+                            ...batchFormData,
+                            start_time: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="batch_end_time">Hora Fim</Label>
+                      <Input
+                        id="batch_end_time"
+                        type="time"
+                        value={batchFormData.end_time}
+                        onChange={(e) =>
+                          setBatchFormData({
+                            ...batchFormData,
+                            end_time: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="interval">Intervalo (min)</Label>
+                      <Input
+                        id="interval"
+                        type="number"
+                        min="1"
+                        value={batchFormData.interval_minutes}
+                        onChange={(e) =>
+                          setBatchFormData({
+                            ...batchFormData,
+                            interval_minutes: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
                   <div>
-                    <Label htmlFor="start_time">Hora Início</Label>
+                    <Label>Dias da Semana (opcional)</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {weekdayLabels.map((day) => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => toggleWeekday(day.value)}
+                          className={`px-3 py-1 rounded-md text-sm ${
+                            batchFormData.weekdays.includes(day.value)
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Meses (opcional)</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {monthLabels.map((month) => (
+                        <button
+                          key={month.value}
+                          type="button"
+                          onClick={() => toggleMonth(month.value)}
+                          className={`px-3 py-1 rounded-md text-sm ${
+                            batchFormData.months.includes(month.value)
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {month.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleCloseBatchDialog}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit">Criar Horários</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                if (!open) handleCloseDialog();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button
+                  className="flex items-center gap-2"
+                  onClick={handleOpenCreateDialog}
+                >
+                  <Plus className="h-5 w-5" />
+                  Novo Horário
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingSchedule ? "Editar Horário" : "Novo Horário"}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="single_arena">Arena</Label>
+                      <Select
+                        value={formArenaId?.toString()}
+                        onValueChange={(value) =>
+                          setFormArenaId(parseInt(value))
+                        }
+                      >
+                        <SelectTrigger id="single_arena" className="w-full">
+                          <SelectValue placeholder="Selecione arena" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {arenas.map((arena) => (
+                            <SelectItem
+                              key={arena.id}
+                              value={arena.id.toString()}
+                            >
+                              {capitalizeWords(arena.name)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="single_court">Quadra</Label>
+                      <Select
+                        value={formCourtId?.toString()}
+                        onValueChange={(value) =>
+                          setFormCourtId(parseInt(value))
+                        }
+                        disabled={!formArenaId || formCourts.length === 0}
+                      >
+                        <SelectTrigger id="single_court" className="w-full">
+                          <SelectValue placeholder="Selecione quadra" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formCourts.map((court) => (
+                            <SelectItem
+                              key={court.id}
+                              value={court.id.toString()}
+                            >
+                              {capitalizeWords(court.name)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="date">Data</Label>
                     <Input
-                      id="start_time"
-                      type="time"
-                      value={formData.start_time}
+                      id="date"
+                      type="date"
+                      value={formData.date}
                       onChange={(e) =>
-                        setFormData({ ...formData, start_time: e.target.value })
+                        setFormData({ ...formData, date: e.target.value })
                       }
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="end_time">Hora Fim</Label>
-                    <Input
-                      id="end_time"
-                      type="time"
-                      value={formData.end_time}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_time: e.target.value })
-                      }
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start_time">Hora Início</Label>
+                      <Input
+                        id="start_time"
+                        type="time"
+                        value={formData.start_time}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            start_time: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="end_time">Hora Fim</Label>
+                      <Input
+                        id="end_time"
+                        type="time"
+                        value={formData.end_time}
+                        onChange={(e) =>
+                          setFormData({ ...formData, end_time: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleCloseDialog}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit">
-                    {editingSchedule ? "Atualizar" : "Criar"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleCloseDialog}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit">
+                      {editingSchedule ? "Atualizar" : "Criar"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
@@ -688,23 +687,9 @@ export default function OwnerSchedules() {
           <p className="text-gray-600 mb-6">
             Comece criando horários para esta quadra
           </p>
-          <div className="flex gap-3 justify-center">
-            <Button
-              onClick={() => setDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-5 w-5" />
-              Criar Horário
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setBatchDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Clock className="h-5 w-5" />
-              Criar em Lote
-            </Button>
-          </div>
+          <p className="text-sm text-gray-500">
+            Use as ações no topo para criar horários.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -720,36 +705,42 @@ export default function OwnerSchedules() {
                     day: "numeric",
                   })}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {daySchedules
                     .sort((a, b) => a.start_time.localeCompare(b.start_time))
                     .map((schedule) => (
                       <div
                         key={schedule.id}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-green-600 transition-colors"
+                        className="border border-gray-200 rounded-lg p-4 bg-white hover:border-green-600 hover:shadow-sm transition-all"
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Clock className="h-4 w-4 text-gray-600" />
-                          <span className="font-medium text-gray-900">
-                            {schedule.start_time} - {schedule.end_time}
-                          </span>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleEdit(schedule)}
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(schedule.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center h-9 w-9 rounded-full bg-emerald-50 text-emerald-600">
+                              <Clock className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {schedule.start_time} - {schedule.end_time}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Horário disponível
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleEdit(schedule)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => handleDelete(schedule.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

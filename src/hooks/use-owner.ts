@@ -7,6 +7,12 @@ import {
 import { http } from "../api/http";
 import type { Arena } from "../types/arena";
 import type { Court, CourtRequest, CourtUpdate } from "../types/court";
+import type {
+  Schedule,
+  ScheduleRequest,
+  ScheduleUpdate,
+  ScheduleBatchRequest,
+} from "../types/schedule";
 import { useMemo } from "react";
 
 // ============================================================================
@@ -52,6 +58,39 @@ const updateOwnerCourt = async (
 
 const deleteOwnerCourt = async (id: number): Promise<void> => {
   await http.delete(`/courts/${id}`);
+};
+
+const getOwnerSchedulesByCourt = async (
+  courtId: number,
+): Promise<Schedule[]> => {
+  const { data } = await http.get(`/catalog/courts/${courtId}/schedules`);
+  return data;
+};
+
+const createOwnerSchedule = async (
+  payload: ScheduleRequest,
+): Promise<Schedule> => {
+  const { data } = await http.post(`/schedules/`, payload);
+  return data;
+};
+
+const updateOwnerSchedule = async (
+  id: number,
+  payload: ScheduleUpdate,
+): Promise<Schedule> => {
+  const { data } = await http.put(`/schedules/${id}`, payload);
+  return data;
+};
+
+const deleteOwnerSchedule = async (id: number): Promise<void> => {
+  await http.delete(`/schedules/${id}`);
+};
+
+const createOwnerSchedulesBatch = async (
+  payload: ScheduleBatchRequest,
+): Promise<any> => {
+  const { data } = await http.post(`/schedules/batch`, payload);
+  return data;
 };
 
 // ============================================================================
@@ -159,6 +198,61 @@ export function useDeleteOwnerCourt() {
     mutationFn: (id: number) => deleteOwnerCourt(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
+    },
+  });
+}
+
+export function useOwnerSchedulesByCourt(courtId: number | null) {
+  return useQuery<Schedule[], Error>({
+    queryKey: ["owner", "schedules", courtId],
+    queryFn: () => getOwnerSchedulesByCourt(courtId!),
+    enabled: !!courtId,
+  });
+}
+
+export function useCreateOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<Schedule, Error, ScheduleRequest>({
+    mutationFn: (payload: ScheduleRequest) => createOwnerSchedule(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["owner", "schedules", variables.court_id],
+      });
+    },
+  });
+}
+
+export function useUpdateOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<Schedule, Error, { id: number; payload: ScheduleUpdate }>(
+    {
+      mutationFn: ({ id, payload }) => updateOwnerSchedule(id, payload),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
+      },
+    },
+  );
+}
+
+export function useDeleteOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: (id: number) => deleteOwnerSchedule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
+    },
+  });
+}
+
+export function useBatchOwnerSchedules() {
+  const queryClient = useQueryClient();
+  return useMutation<any, Error, ScheduleBatchRequest>({
+    mutationFn: (payload: ScheduleBatchRequest) =>
+      createOwnerSchedulesBatch(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["owner", "schedules", variables.court_id],
+      });
     },
   });
 }
