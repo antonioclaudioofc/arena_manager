@@ -4,6 +4,7 @@ export const CourtBaseSchema = z.object({
   name: z.string().min(2).optional(),
   sports_type: z.string().min(2).optional(),
   price_per_hour: z.number().positive().optional(),
+  description: z.string().optional(),
 });
 
 export const CourtRequestSchema = CourtBaseSchema.extend({
@@ -21,4 +22,5 @@ export const CourtResponseSchema = z.object({
   name: z.string(),
   sports_type: z.string(),
   price_per_hour: z.number(),
+  description: z.string().optional(),
 });

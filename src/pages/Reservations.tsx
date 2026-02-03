@@ -27,6 +27,9 @@ export default function Reservations() {
   const { data: reservations = [], isLoading } = useUserReservations();
   const { mutate: deleteReservation } = useDeleteReservation();
 
+  // Debug: ver estrutura dos dados
+  console.log('Reservations data:', reservations);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<number | null>(
     null,
@@ -147,9 +150,9 @@ export default function Reservations() {
             {user?.role !== "client" && (
               <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
                 <p className="text-sm text-yellow-800">
-                  <strong>Nota:</strong> Estas são reservas que você fez antes de se
-                  tornar proprietário de arena. Você não pode mais cancelar ou
-                  modificar essas reservas.
+                  <strong>Nota:</strong> Estas são reservas que você fez antes
+                  de se tornar proprietário de arena. Você não pode mais
+                  cancelar ou modificar essas reservas.
                 </p>
               </div>
             )}
@@ -180,11 +183,15 @@ export default function Reservations() {
                     <tr key={reservation.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {reservation.schedule?.court?.name || "N/A"}
+                          {reservation.schedule?.court?.name || `Quadra #${reservation.schedule_id || 'N/A'}`}
                         </div>
-                        {reservation.schedule?.court?.sports_type && (
+                        {reservation.schedule?.court?.sports_type ? (
                           <div className="text-sm text-gray-500">
                             {reservation.schedule.court.sports_type}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-yellow-600">
+                            API incompleta
                           </div>
                         )}
                       </td>
@@ -199,8 +206,9 @@ export default function Reservations() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {reservation.schedule?.start_time} -{" "}
-                        {reservation.schedule?.end_time}
+                        {reservation.schedule?.start_time && reservation.schedule?.end_time
+                          ? `${reservation.schedule.start_time} - ${reservation.schedule.end_time}`
+                          : 'Horário não disponível'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(reservation.status)}

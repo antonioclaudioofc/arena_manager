@@ -59,7 +59,8 @@ export default function Home() {
     selectedArena?.id || null,
   );
 
-  const { schedules, schedulesQueries } = useCatalogSchedulesByCourts(
+  const { schedules, schedulesQueries, schedulesWithCourts } =
+    useCatalogSchedulesByCourts(
     courts as any[],
     !!selectedArena,
   );
@@ -67,7 +68,7 @@ export default function Home() {
   const datePills = useDatePills();
 
   const scheduleMap = useScheduleMapping(
-    schedules,
+    schedulesWithCourts,
     reservedScheduleIds,
     selectedDateIndex,
     datePills,

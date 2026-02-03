@@ -35,6 +35,7 @@ export function useCatalogArenas() {
     queryFn: getAllArenas,
   });
 }
+import type { ScheduleWithCourt } from "../types/schedule";
 
 export function useCatalogCourtsByArena(arenaId: number | null) {
   return useQuery<Court[], Error>({
@@ -68,9 +69,27 @@ export function useCatalogSchedulesByCourts(
     return schedulesQueries.flatMap((q: any) => q.data || []);
   }, [schedulesQueries]);
 
+  const schedulesWithCourts = useMemo(() => {
+    const courtsMap = new Map(courts.map((c) => [c.id, c]));
+    return schedules.map((s) => {
+      const court = courtsMap.get(s.court_id);
+      return {
+        ...s,
+        court: court
+          ? {
+              id: court.id,
+              name: court.name,
+              sports_type: court.sports_type,
+            }
+          : { id: s.court_id, name: "N/A", sports_type: undefined },
+      } as ScheduleWithCourt;
+    });
+  }, [schedules, courts]);
+
   return {
     schedules,
     schedulesQueries,
+    schedulesWithCourts,
   };
 }
 

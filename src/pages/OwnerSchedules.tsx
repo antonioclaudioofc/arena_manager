@@ -64,7 +64,6 @@ export default function OwnerSchedules() {
     end_time: "",
     interval_minutes: "60",
     weekdays: [] as number[],
-    months: [] as number[],
   });
 
   const weekdayLabels = [
@@ -77,20 +76,7 @@ export default function OwnerSchedules() {
     { value: 6, label: "Domingo" },
   ];
 
-  const monthLabels = [
-    { value: 1, label: "Janeiro" },
-    { value: 2, label: "Fevereiro" },
-    { value: 3, label: "Março" },
-    { value: 4, label: "Abril" },
-    { value: 5, label: "Maio" },
-    { value: 6, label: "Junho" },
-    { value: 7, label: "Julho" },
-    { value: 8, label: "Agosto" },
-    { value: 9, label: "Setembro" },
-    { value: 10, label: "Outubro" },
-    { value: 11, label: "Novembro" },
-    { value: 12, label: "Dezembro" },
-  ];
+
 
   useEffect(() => {
     if (!selectedArena && arenas.length > 0) {
@@ -189,7 +175,6 @@ export default function OwnerSchedules() {
         end_time: batchFormData.end_time,
         interval_minutes: parseInt(batchFormData.interval_minutes),
         weekdays: batchFormData.weekdays,
-        months: batchFormData.months,
       };
 
       await batchSchedules.mutateAsync(payload);
@@ -260,7 +245,6 @@ export default function OwnerSchedules() {
       end_time: "",
       interval_minutes: "60",
       weekdays: [],
-      months: [],
     });
   };
 
@@ -273,14 +257,7 @@ export default function OwnerSchedules() {
     }));
   };
 
-  const toggleMonth = (month: number) => {
-    setBatchFormData((prev) => ({
-      ...prev,
-      months: prev.months.includes(month)
-        ? prev.months.filter((m) => m !== month)
-        : [...prev.months, month],
-    }));
-  };
+
 
   if (loading) {
     return (
@@ -511,25 +488,6 @@ export default function OwnerSchedules() {
                           }`}
                         >
                           {day.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Meses (opcional)</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {monthLabels.map((month) => (
-                        <button
-                          key={month.value}
-                          type="button"
-                          onClick={() => toggleMonth(month.value)}
-                          className={`px-3 py-1 rounded-md text-sm ${
-                            batchFormData.months.includes(month.value)
-                              ? "bg-green-600 text-white"
-                              : "bg-gray-200 text-gray-700"
-                          }`}
-                        >
-                          {month.label}
                         </button>
                       ))}
                     </div>

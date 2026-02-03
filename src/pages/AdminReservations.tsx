@@ -1,7 +1,10 @@
-import { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../providers/AuthProvider";
+import { useState } from "react";
 import { toast } from "sonner";
-import { getErrorMessage } from "../api/http";
+import {
+  useAdminReservations,
+  useDeleteReservation,
+} from "../hooks/use-reservation";
+import type { AdminReservation } from "../types/reservation";
 import {
   Dialog,
   DialogHeader,
@@ -11,109 +14,33 @@ import {
 } from "../components/Dialog";
 import { Button } from "../components/Button";
 
-interface AdminReservation {
-  id: number;
-  status: string;
-  created_at: string;
-
-  user: {
-    id: number;
-    first_name?: string;
-    last_name?: string;
-    username?: string;
-    email?: string;
-  };
-
-  schedule: {
-    id: number;
-    date: string;
-    start_time: string;
-    end_time: string;
-    court: {
-      id: number;
-      name: string;
-    };
-  };
-}
-
 export default function AdminReservations() {
-  const { token } = useContext(AuthContext);
-  const [reservations, setReservations] = useState<AdminReservation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: reservations = [], isLoading } = useAdminReservations();
+  const { mutate: deleteReservation } = useDeleteReservation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<number | null>(
     null
   );
-
-  const API_BASE = import.meta.env.VITE_API_BASE;
-
-  const fetchReservations = async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch(`${API_BASE}/admin/reservations`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Erro ao buscar reservas");
-
-        return;
-      }
-
-      setReservations(data);
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao carregar reservas");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteClick = (id: number) => {
     setReservationToDelete(id);
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     if (!reservationToDelete) return;
 
-    try {
-      const response = await fetch(
-        `${API_BASE}/reservations/${reservationToDelete}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.message || "Erro ao excluir reserva");
-
-        return;
-      }
-
-      toast.success(data.message || "Reserva excluída com sucesso!");
-      setDeleteDialogOpen(false);
-      setReservationToDelete(null);
-      fetchReservations();
-    } catch (err: any) {
-      console.error(err);
-      toast.error(getErrorMessage(err));
-    }
+    deleteReservation(reservationToDelete, {
+      onSuccess: () => {
+        toast.success("Reserva excluída com sucesso!");
+        setDeleteDialogOpen(false);
+        setReservationToDelete(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || "Erro ao excluir reserva");
+      },
+    });
   };
-
-  useEffect(() => {
-    fetchReservations();
-  }, []);
 
   return (
     <div className="p-6">
@@ -150,7 +77,7 @@ export default function AdminReservations() {
           </thead>
 
           <tbody className="bg-white divide-y divide-gray-200">
-            {loading ? (
+            {isLoading ? (
               <tr>
                 <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                   Carregando reservas...
