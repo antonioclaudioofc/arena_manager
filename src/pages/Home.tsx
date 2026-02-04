@@ -26,6 +26,7 @@ import "dayjs/locale/pt-br";
 import { capitalizeWords } from "../utils/capitalizeWords";
 import { AuthContext } from "../providers/AuthProvider";
 import type { Arena } from "../types/arena";
+import { isDemoClient } from "../utils/isDemoUser";
 
 dayjs.locale("pt-br");
 
@@ -40,6 +41,7 @@ export default function Home() {
 
   const { token, user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const demoClient = isDemoClient(user);
 
   const { filteredArenas, cities } = useCatalogArenasFiltering(
     arenas,
@@ -361,6 +363,7 @@ export default function Home() {
               </div>
               <Button
                 onClick={() => {
+                  if (demoClient) return;
                   if (!user) {
                     navigate("/register");
                   } else if (user.role === "client") {
@@ -370,14 +373,19 @@ export default function Home() {
                   }
                 }}
                 variant="default"
-                className="w-full md:w-auto flex items-center gap-2 whitespace-nowrap"
+                disabled={demoClient}
+                className={`w-full md:w-auto flex items-center gap-2 whitespace-nowrap ${
+                  demoClient ? "cursor-not-allowed opacity-70" : ""
+                }`}
               >
                 <Building2 size={20} />
                 {!user
                   ? "Criar Arena"
-                  : user.role === "client"
-                    ? "Cadastrar Arena"
-                    : "Gerenciar Arenas"}
+                  : demoClient
+                    ? "Demo não pode cadastrar"
+                    : user.role === "client"
+                      ? "Cadastrar Arena"
+                      : "Gerenciar Arenas"}
               </Button>
             </div>
           </div>

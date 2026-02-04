@@ -197,15 +197,15 @@ export default function Login() {
             </p>
             <div className="space-y-3">
               <Button
-                onClick={() => handleDemoLogin("arenamanager", "123456")}
+                onClick={() => handleDemoLogin("owner", "123456")}
                 disabled={loading}
                 variant="outline"
                 className="w-full bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
               >
-                Demo Admin
+                Demo Dono
               </Button>
               <Button
-                onClick={() => handleDemoLogin("user", "123456")}
+                onClick={() => handleDemoLogin("client", "123456")}
                 disabled={loading}
                 variant="outline"
                 className="w-full bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100"

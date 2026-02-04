@@ -4,7 +4,6 @@ import {
   useAdminReservations,
   useDeleteReservation,
 } from "../hooks/use-reservation";
-import type { AdminReservation } from "../types/reservation";
 import {
   Dialog,
   DialogHeader,
@@ -19,7 +18,7 @@ export default function AdminReservations() {
   const { mutate: deleteReservation } = useDeleteReservation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<number | null>(
-    null
+    null,
   );
 
   const handleDeleteClick = (id: number) => {
@@ -112,7 +111,7 @@ export default function AdminReservations() {
 
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(reservation.schedule.date).toLocaleDateString(
-                      "pt-BR"
+                      "pt-BR",
                     )}
                   </td>
 
@@ -127,8 +126,8 @@ export default function AdminReservations() {
                         reservation.status === "Agendado"
                           ? "bg-yellow-100 text-yellow-800"
                           : reservation.status === "Ocupado"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-red-100 text-red-800"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-red-100 text-red-800"
                       }`}
                     >
                       {reservation.status}

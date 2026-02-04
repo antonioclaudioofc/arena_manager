@@ -1,11 +1,9 @@
 import { OwnerSidebar } from "../components/OwnerSidebar";
 import { SidebarProvider, SidebarTrigger } from "../components/Sidebar";
-import { Outlet, useNavigate } from "react-router";
+import { Outlet } from "react-router";
 import { ArrowLeft } from "lucide-react";
 
 export default function OwnerDashboard() {
-  const navigate = useNavigate();
-
   return (
     <SidebarProvider>
       <OwnerSidebar />
