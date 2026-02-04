@@ -18,7 +18,7 @@ export default function OwnerDashboard() {
             </h1>
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => (window.location.href = "/")}
             className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 active:bg-gray-800 transition-all duration-200 cursor-pointer font-medium whitespace-nowrap shadow-md hover:shadow-lg"
           >
             <ArrowLeft size={20} />

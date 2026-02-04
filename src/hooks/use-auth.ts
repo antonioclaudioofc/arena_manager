@@ -63,14 +63,18 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const token = getValidToken();
 
-  const { data: user, isLoading, refetch, error } = useQuery<User, Error>({
+  const {
+    data: user,
+    isLoading,
+    refetch,
+    error,
+  } = useQuery<User, Error>({
     queryKey: ["me"],
     queryFn: getMe,
     enabled: !!token,
     retry: false,
   });
 
-  // Debug log para ver se há erro
   if (error) {
     console.error("[useAuth] Erro ao buscar usuário:", error);
   }

@@ -159,7 +159,6 @@ export function useScheduleMapping(
     schedules.forEach((s) => {
       if (s.date !== selectedIso) return;
 
-      // Filter out already reserved schedules
       if (reservedScheduleIds.includes(s.id)) return;
 
       const courtId = s.court_id;

@@ -18,6 +18,7 @@ import {
   useDeleteReservation,
 } from "../hooks/use-reservation";
 import { useAuth } from "../providers/AuthProvider";
+import { capitalizeWords } from "../utils/capitalizeWords";
 
 dayjs.locale("pt-br");
 
@@ -27,15 +28,11 @@ export default function Reservations() {
   const { data: reservations = [], isLoading } = useUserReservations();
   const { mutate: deleteReservation } = useDeleteReservation();
 
-  // Debug: ver estrutura dos dados
-  console.log('Reservations data:', reservations);
-
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState<number | null>(
     null,
   );
 
-  // Owner/admin não pode cancelar suas reservas antigas
   const canCancelReservations = user?.role === "client";
 
   const handleConfirmDelete = () => {
@@ -183,17 +180,9 @@ export default function Reservations() {
                     <tr key={reservation.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {reservation.schedule?.court?.name || `Quadra #${reservation.schedule_id || 'N/A'}`}
+                          {capitalizeWords(reservation.schedule?.court?.name) ||
+                            `Quadra #${reservation.schedule_id || "N/A"}`}
                         </div>
-                        {reservation.schedule?.court?.sports_type ? (
-                          <div className="text-sm text-gray-500">
-                            {reservation.schedule.court.sports_type}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-yellow-600">
-                            API incompleta
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
@@ -206,9 +195,10 @@ export default function Reservations() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {reservation.schedule?.start_time && reservation.schedule?.end_time
+                        {reservation.schedule?.start_time &&
+                        reservation.schedule?.end_time
                           ? `${reservation.schedule.start_time} - ${reservation.schedule.end_time}`
-                          : 'Horário não disponível'}
+                          : "Horário não disponível"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(reservation.status)}

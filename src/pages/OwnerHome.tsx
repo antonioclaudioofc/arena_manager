@@ -1,71 +1,62 @@
-import { useContext, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Building2, Trophy, CalendarDays } from "lucide-react";
-import { toast } from "sonner";
-import { AuthContext } from "../providers/AuthProvider";
-
-interface Arena {
-  id: number;
-  name: string;
-  city: string;
-  address: string;
-}
+import { useQueries } from "@tanstack/react-query";
+import { useArenas } from "../hooks/use-arena";
+import { http } from "../api/http";
+import { capitalizeWords } from "../utils/capitalizeWords";
+import type { Court } from "../types/court";
+import type { Schedule } from "../types/schedule";
 
 export default function OwnerHome() {
-  const { token } = useContext(AuthContext);
-  const [arenas, setArenas] = useState<Arena[]>([]);
+  const { data: arenas = [], isLoading } = useArenas();
   const [stats, setStats] = useState({
     totalArenas: 0,
     totalCourts: 0,
     totalSchedules: 0,
   });
-  const [loading, setLoading] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const courtsQueries = useQueries({
+    queries: (arenas || []).map((arena) => ({
+      queryKey: ["courts", arena.id],
+      queryFn: async () => {
+        const { data } = await http.get<Court[]>(`/courts/${arena.id}`);
+        return data;
+      },
+    })),
+  });
+
+  const schedulesQueries = useQueries({
+    queries: (courtsQueries || [])
+      .flatMap((query: any) => query.data || [])
+      .map((court: Court) => ({
+        queryKey: ["schedules", court.id],
+        queryFn: async () => {
+          const { data } = await http.get<Schedule[]>(
+            `/catalog/courts/${court.id}/schedules`,
+          );
+          return data;
+        },
+      })),
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/arenas/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    const totalCourts = courtsQueries.reduce((sum, query: any) => {
+      return sum + (query.data?.length || 0);
+    }, 0);
 
-        if (response.ok) {
-          const data = await response.json();
-          setArenas(data);
-          setStats((prev) => ({ ...prev, totalArenas: data.length }));
+    const totalSchedules = schedulesQueries.reduce((sum, query: any) => {
+      return sum + (query.data?.length || 0);
+    }, 0);
 
-          // Buscar quadras de todas as arenas
-          let totalCourts = 0;
-          for (const arena of data) {
-            const courtsResponse = await fetch(
-              `${API_BASE}/courts/${arena.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              },
-            );
-            if (courtsResponse.ok) {
-              const courts = await courtsResponse.json();
-              totalCourts += courts.length;
-            }
-          }
-          setStats((prev) => ({ ...prev, totalCourts }));
-        }
-      } catch (err) {
-        console.error("Erro ao buscar dados:", err);
-        toast.error("Erro ao carregar dados");
-      } finally {
-        setLoading(false);
-      }
-    };
+    setStats((prev) => ({
+      ...prev,
+      totalArenas: arenas.length,
+      totalCourts,
+      totalSchedules,
+    }));
+  }, [arenas, courtsQueries, schedulesQueries]);
 
-    fetchData();
-  }, [token, API_BASE]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -84,7 +75,6 @@ export default function OwnerHome() {
         </p>
       </div>
 
-      {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
           <div className="flex items-center justify-between">
@@ -131,13 +121,23 @@ export default function OwnerHome() {
         </div>
       </div>
 
-      {/* Lista de arenas */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-          Minhas Arenas
-        </h3>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-gray-900">Minhas Arenas</h3>
+          {arenas.length > 0 && (
+            <div className="flex justify-center">
+              <a
+                href="/owner/arenas"
+                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                Gerenciar Arenas
+              </a>
+            </div>
+          )}
+        </div>
+
         {arenas.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 px-6">
             <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 text-lg mb-4">
               Você ainda não possui arenas cadastradas
@@ -150,19 +150,61 @@ export default function OwnerHome() {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {arenas.map((arena) => (
-              <div
-                key={arena.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-green-600 transition-colors"
-              >
-                <h4 className="font-semibold text-lg text-gray-900">
-                  {arena.name}
-                </h4>
-                <p className="text-gray-600 text-sm mt-1">{arena.city}</p>
-                <p className="text-gray-500 text-sm">{arena.address}</p>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Arena
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Cidade
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    Endereço
+                  </th>
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
+                    Quadras
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {arenas.map((arena) => (
+                  <tr
+                    key={arena.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-green-100 p-2 rounded-lg">
+                          <Building2 className="h-5 w-5 text-green-600" />
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {capitalizeWords(arena.name)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {capitalizeWords(arena.city)}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">
+                      {capitalizeWords(arena.address)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center">
+                        <div className="bg-blue-50 px-3 py-1 rounded-full">
+                          <span className="text-sm font-semibold text-blue-600">
+                            {courtsQueries[
+                              arenas.findIndex((a) => a.id === arena.id)
+                            ]?.data?.length || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

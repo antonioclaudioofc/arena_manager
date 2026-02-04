@@ -259,30 +259,24 @@ export default function Register() {
                 )}
               />
 
-              <Button
-                type="submit"
-                disabled={loading}
-                variant="default"
-                className="w-full"
-              >
+              <Button type="submit" disabled={loading}>
                 {loading ? "Criando conta..." : "Criar Conta"}
               </Button>
             </form>
           </Form>
 
-          {/* Divider */}
           <div className="my-8 flex items-center gap-4">
             <div className="flex-1 h-px bg-gray-200"></div>
             <span className="text-gray-500 text-sm">ou</span>
             <div className="flex-1 h-px bg-gray-200"></div>
           </div>
 
-          {/* Link para Login */}
           <div className="text-center">
             <p className="text-gray-500 mb-3 font-medium">
               Já possui uma conta?
             </p>
             <Button
+              type="button"
               onClick={() => navigate("/login")}
               variant="outline"
               className="w-full"
@@ -293,7 +287,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Lado DIREITO - Propaganda FIXA (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-8 sticky top-0 h-screen bg-emerald-600">
         <div className="text-center text-white max-w-md">
           <img

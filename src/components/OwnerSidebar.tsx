@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./Sidebar";
+import { capitalizeWords } from "../utils/capitalizeWords";
 
 const ownerItems = [
   {
@@ -104,7 +105,7 @@ export function OwnerSidebar() {
             </div>
             <div className="text-center">
               <p className="font-semibold text-gray-800 text-sm">
-                {user.name}
+                {capitalizeWords(user.name)}
               </p>
               <p className="text-gray-500 text-xs truncate w-full">
                 {user.email}

@@ -5,7 +5,6 @@ import {
   useCatalogSchedulesByCourts,
   useCatalogArenasFiltering,
   useDatePills,
-  useScheduleMapping,
 } from "../hooks/use-catalog";
 import { useUserReservations } from "../hooks/use-reservation";
 import CourtList from "../components/CourtList";
@@ -48,31 +47,27 @@ export default function Home() {
     selectedCity,
   );
 
-  const { data: reservations = [], refetch: refetchReservations } =
-    useUserReservations(!!token);
-
-  const reservedScheduleIds = (reservations || [])
-    .map((r: any) => r.schedule_id)
-    .filter(Boolean);
+  const { refetch: refetchReservations } = useUserReservations(!!token);
 
   const { data: courts = [], refetch: refetchCourts } = useCatalogCourtsByArena(
     selectedArena?.id || null,
   );
 
-  const { schedules, schedulesQueries, schedulesWithCourts } =
-    useCatalogSchedulesByCourts(
+  const { schedulesWithCourts, schedulesQueries } = useCatalogSchedulesByCourts(
     courts as any[],
     !!selectedArena,
   );
 
-  const datePills = useDatePills();
-
-  const scheduleMap = useScheduleMapping(
-    schedulesWithCourts,
-    reservedScheduleIds,
-    selectedDateIndex,
-    datePills,
+  const enrichedScheduleMap = schedulesWithCourts.reduce(
+    (acc: Record<number, any[]>, schedule) => {
+      if (!acc[schedule.court_id]) acc[schedule.court_id] = [];
+      acc[schedule.court_id].push(schedule);
+      return acc;
+    },
+    {},
   );
+
+  const datePills = useDatePills();
 
   const refetchData = () => {
     schedulesQueries.forEach((q: any) => q.refetch && q.refetch());
@@ -121,7 +116,7 @@ export default function Home() {
                 />
                 <Input
                   type="text"
-                  placeholder="Buscar arena ou cidade..."
+                  placeholder="Buscar arena ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-16 pr-16 py-7 text-lg rounded-xl border border-gray-300 bg-gray-50 text-gray-900 placeholder:text-gray-500 focus:bg-white"
@@ -139,7 +134,7 @@ export default function Home() {
               {cities.length > 0 && (
                 <div>
                   <p className="text-sm font-semibold mb-3 text-center text-gray-900">
-                    Filtrar por Local:
+                    Filtrar por Arena:
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <button
@@ -155,7 +150,7 @@ export default function Home() {
                         onClick={() => setSelectedCity(city)}
                         className={`filter-tag ${selectedCity === city ? "active" : ""}`}
                       >
-                        {city}
+                        {capitalizeWords(city)}
                       </button>
                     ))}
                   </div>
@@ -336,7 +331,7 @@ export default function Home() {
                 <div>
                   <CourtList
                     courts={courts}
-                    scheduleMap={scheduleMap}
+                    scheduleMap={enrichedScheduleMap}
                     onReservationSuccess={refetchData}
                   />
                 </div>

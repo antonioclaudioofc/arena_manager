@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-base cursor-pointer font-medium p-10 transition-all disabled:pointer-events-none disabled:opacity-50 outline-none w-full aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-base cursor-pointer font-medium p-10 transition-all disabled:pointer-events-none disabled:opacity-50 outline-none w-full aria-invalid:ring-destructive/20 aria-invalid:border-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
   {
     variants: {
       variant: {
-        default: "bg-green-700 text-white hover:bg-green-600",
+        default: "bg-green-700 text-white hover:bg-green-600 focus-visible:ring-green-700",
         destructive:
-          "bg-red-700 text-white hover:bg-red-600 focus-visible:ring-red-600",
+          "bg-red-700 text-white hover:bg-red-600 focus-visible:ring-red-700",
         outline:
-          "border border-gray-200 bg-white text-green-800 shadow-xs hover:bg-gray-200 hover:text-green-600",
+          "border border-gray-200 bg-white text-green-800 shadow-xs hover:bg-gray-200 hover:text-green-600 focus-visible:ring-green-600",
         secondary:
-          "border border-gray-400 bg-white text-green-700 hover:bg-gray-300",
+          "border border-gray-400 bg-white text-green-700 hover:bg-gray-300 focus-visible:ring-green-700",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",

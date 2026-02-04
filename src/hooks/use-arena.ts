@@ -36,9 +36,6 @@ const deleteArena = async (id: number): Promise<{ message: string }> => {
 // React Query Hooks
 // ============================================================================
 
-/**
- * Hook para buscar todas as arenas do proprietário
- */
 export function useArenas() {
   return useQuery<Arena[], Error>({
     queryKey: ["arenas"],
@@ -47,19 +44,13 @@ export function useArenas() {
   });
 }
 
-/**
- * Hook para criar uma nova arena
- * Usuário é automaticamente promovido a owner ao criar primeira arena
- */
 export function useCreateArena() {
   const queryClient = useQueryClient();
 
   return useMutation<{ message: string }, Error, ArenaRequest>({
     mutationFn: createArena,
     onSuccess: () => {
-      // Invalidar arenas para refetch
       queryClient.invalidateQueries({ queryKey: ["arenas"] });
-      // Invalidar dados do usuário (role pode ter mudado para owner)
       queryClient.invalidateQueries({ queryKey: ["me"] });
       toast.success("Arena criada com sucesso!");
     },
@@ -70,9 +61,6 @@ export function useCreateArena() {
   });
 }
 
-/**
- * Hook para atualizar uma arena existente
- */
 export function useUpdateArena() {
   const queryClient = useQueryClient();
 
@@ -93,9 +81,6 @@ export function useUpdateArena() {
   });
 }
 
-/**
- * Hook para deletar uma arena
- */
 export function useDeleteArena() {
   const queryClient = useQueryClient();
 
