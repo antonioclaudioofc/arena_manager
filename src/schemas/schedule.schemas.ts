@@ -27,6 +27,14 @@ export const ScheduleWithAvailabilitySchema = ScheduleResponseSchema.extend({
   available: z.boolean(),
 });
 
+export const ScheduleWithCourtSchema = ScheduleResponseSchema.extend({
+  court: z.object({
+    id: z.number(),
+    name: z.string(),
+    sports_type: z.string().optional(),
+  }),
+});
+
 export const ScheduleBatchRequestSchema = z.object({
   court_id: z.number(),
   start_date: z.string(),
@@ -35,5 +43,4 @@ export const ScheduleBatchRequestSchema = z.object({
   end_time: z.string(),
   interval_minutes: z.number().positive(),
   weekdays: z.array(z.number().min(0).max(6)),
-  months: z.array(z.number().min(1).max(12)),
 });

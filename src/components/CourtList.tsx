@@ -1,29 +1,15 @@
 import { capitalizeWords } from "../utils/capitalizeWords";
 import ScheduleCard from "./ScheduleCard";
+import type { Court } from "../types/court";
+import type { ScheduleWithCourt } from "../types/schedule";
 
 export default function CourtList({
   courts,
   scheduleMap,
   onReservationSuccess,
 }: {
-  courts: {
-    id: number;
-    name: string;
-    sports_type?: string;
-    description?: string;
-    price_per_hour?: number;
-  }[];
-  scheduleMap: Record<
-    number,
-    {
-      id: number;
-      date: string;
-      start_time: string;
-      end_time: string;
-      is_available?: boolean;
-      court_id: number;
-    }[]
-  >;
+  courts: Court[];
+  scheduleMap: Record<number, ScheduleWithCourt[]>;
   onReservationSuccess?: () => void;
 }) {
   return (

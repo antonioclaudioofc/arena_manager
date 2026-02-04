@@ -1,6 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useQueries,
+} from "@tanstack/react-query";
 import { http } from "../api/http";
 import type { Arena } from "../types/arena";
+import type { Court, CourtRequest, CourtUpdate } from "../types/court";
+import type {
+  Schedule,
+  ScheduleRequest,
+  ScheduleUpdate,
+  ScheduleBatchRequest,
+} from "../types/schedule";
+import { useMemo } from "react";
 
 // ============================================================================
 // API Functions
@@ -23,6 +36,61 @@ const updateOwnerArena = async (payload: any): Promise<Arena> => {
 
 const deleteOwnerArena = async (id: number): Promise<void> => {
   await http.delete(`/arenas/${id}`);
+};
+
+const getOwnerCourtsByArena = async (arenaId: number): Promise<Court[]> => {
+  const { data } = await http.get(`/courts/${arenaId}`);
+  return data;
+};
+
+const createOwnerCourt = async (payload: CourtRequest): Promise<Court> => {
+  const { data } = await http.post("/courts/", payload);
+  return data;
+};
+
+const updateOwnerCourt = async (
+  id: number,
+  payload: CourtUpdate,
+): Promise<Court> => {
+  const { data } = await http.put(`/courts/${id}`, payload);
+  return data;
+};
+
+const deleteOwnerCourt = async (id: number): Promise<void> => {
+  await http.delete(`/courts/${id}`);
+};
+
+const getOwnerSchedulesByCourt = async (
+  courtId: number,
+): Promise<Schedule[]> => {
+  const { data } = await http.get(`/catalog/courts/${courtId}/schedules`);
+  return data;
+};
+
+const createOwnerSchedule = async (
+  payload: ScheduleRequest,
+): Promise<Schedule> => {
+  const { data } = await http.post(`/schedules/`, payload);
+  return data;
+};
+
+const updateOwnerSchedule = async (
+  id: number,
+  payload: ScheduleUpdate,
+): Promise<Schedule> => {
+  const { data } = await http.put(`/schedules/${id}`, payload);
+  return data;
+};
+
+const deleteOwnerSchedule = async (id: number): Promise<void> => {
+  await http.delete(`/schedules/${id}`);
+};
+
+const createOwnerSchedulesBatch = async (
+  payload: ScheduleBatchRequest,
+): Promise<any> => {
+  const { data } = await http.post(`/schedules/batch`, payload);
+  return data;
 };
 
 // ============================================================================
@@ -52,6 +120,139 @@ export function useDeleteOwnerArena() {
     mutationFn: (id: number) => deleteOwnerArena(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "arenas"] });
+    },
+  });
+}
+
+export function useOwnerCourtsByArena(arenaId: number | null) {
+  return useQuery<Court[], Error>({
+    queryKey: ["owner", "courts", arenaId],
+    queryFn: () => getOwnerCourtsByArena(arenaId!),
+    enabled: !!arenaId,
+  });
+}
+
+export function useOwnerCourtsByArenas(arenas: Arena[]) {
+  const courtsQueries = useQueries({
+    queries: (arenas || []).map((arena) => ({
+      queryKey: ["owner", "courts", arena.id],
+      queryFn: () => getOwnerCourtsByArena(arena.id),
+      enabled: !!arena.id,
+    })),
+  });
+
+  const courts = useMemo(() => {
+    return courtsQueries.flatMap((q: any) => q.data || []);
+  }, [courtsQueries]);
+
+  const courtsByArenaId = useMemo(() => {
+    const map: Record<number, Court[]> = {};
+    arenas.forEach((arena) => {
+      map[arena.id] = [];
+    });
+    courts.forEach((court) => {
+      const arenaId = court.arena_id;
+      if (!map[arenaId]) {
+        map[arenaId] = [];
+      }
+      map[arenaId].push(court);
+    });
+    return map;
+  }, [arenas, courts]);
+
+  const isLoading = courtsQueries.some((q: any) => q.isLoading);
+  const isError = courtsQueries.some((q: any) => q.isError);
+
+  return {
+    courts,
+    courtsByArenaId,
+    courtsQueries,
+    isLoading,
+    isError,
+  };
+}
+
+export function useCreateOwnerCourt() {
+  const queryClient = useQueryClient();
+  return useMutation<Court, Error, CourtRequest>({
+    mutationFn: (payload: CourtRequest) => createOwnerCourt(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
+    },
+  });
+}
+
+export function useUpdateOwnerCourt() {
+  const queryClient = useQueryClient();
+  return useMutation<Court, Error, { id: number; payload: CourtUpdate }>({
+    mutationFn: ({ id, payload }) => updateOwnerCourt(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
+    },
+  });
+}
+
+export function useDeleteOwnerCourt() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: (id: number) => deleteOwnerCourt(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
+    },
+  });
+}
+
+export function useOwnerSchedulesByCourt(courtId: number | null) {
+  return useQuery<Schedule[], Error>({
+    queryKey: ["owner", "schedules", courtId],
+    queryFn: () => getOwnerSchedulesByCourt(courtId!),
+    enabled: !!courtId,
+  });
+}
+
+export function useCreateOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<Schedule, Error, ScheduleRequest>({
+    mutationFn: (payload: ScheduleRequest) => createOwnerSchedule(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["owner", "schedules", variables.court_id],
+      });
+    },
+  });
+}
+
+export function useUpdateOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<Schedule, Error, { id: number; payload: ScheduleUpdate }>(
+    {
+      mutationFn: ({ id, payload }) => updateOwnerSchedule(id, payload),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
+      },
+    },
+  );
+}
+
+export function useDeleteOwnerSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, number>({
+    mutationFn: (id: number) => deleteOwnerSchedule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
+    },
+  });
+}
+
+export function useBatchOwnerSchedules() {
+  const queryClient = useQueryClient();
+  return useMutation<any, Error, ScheduleBatchRequest>({
+    mutationFn: (payload: ScheduleBatchRequest) =>
+      createOwnerSchedulesBatch(payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["owner", "schedules", variables.court_id],
+      });
     },
   });
 }

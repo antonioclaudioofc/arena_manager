@@ -1,5 +1,5 @@
-import { useContext, useEffect, useState } from "react";
-import { Building2, Pencil, Trash2, Plus } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Building2, Pencil, Trash2, Plus, MapPin, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
 import {
@@ -10,155 +10,80 @@ import {
   DialogTrigger,
 } from "../components/Dialog";
 import { Input } from "../components/Input";
-import { Label } from "../components/Label";
-import { useSearchParams } from "react-router";
-import { AuthContext } from "../providers/AuthProvider";
-
-interface Arena {
-  id: number;
-  name: string;
-  city: string;
-  address: string;
-  owner_id: number;
-}
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/Form";
+import { useForm } from "react-hook-form";
+import {
+  useArenas,
+  useCreateArena,
+  useUpdateArena,
+  useDeleteArena,
+} from "../hooks/use-arena";
+import type { Arena, ArenaUpdate } from "../types/arena";
+import { capitalizeWords } from "../utils/capitalizeWords";
 
 export default function OwnerArenas() {
-  const { token } = useContext(AuthContext);
-  const [searchParams] = useSearchParams();
-  const [arenas, setArenas] = useState<Arena[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: arenas = [], isLoading, isError } = useArenas();
+  const { mutate: createArena, isPending: isCreating } = useCreateArena();
+  const { mutate: updateArena, isPending: isUpdating } = useUpdateArena();
+  const { mutate: deleteArena, isPending: isDeleting } = useDeleteArena();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingArena, setEditingArena] = useState<Arena | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    city: "",
-    address: "",
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [arenaToDelete, setArenaToDelete] = useState<Arena | null>(null);
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      city: "",
+      address: "",
+    },
+    mode: "onChange",
   });
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const filteredArenas = useMemo(() => {
+    if (!searchQuery.trim()) return arenas;
+    const query = searchQuery.toLowerCase();
+    return arenas.filter(
+      (arena) =>
+        arena.name.toLowerCase().includes(query) ||
+        arena.city.toLowerCase().includes(query) ||
+        arena.address.toLowerCase().includes(query),
+    );
+  }, [arenas, searchQuery]);
 
-  // Abrir diálogo automaticamente se veio do registro
-  useEffect(() => {
-    if (searchParams.get("newArena") === "true") {
-      setDialogOpen(true);
-    }
-  }, [searchParams]);
+  const handleSubmit = (data: any) => {
+    const capitalizedData = {
+      name: capitalizeWords(data.name),
+      city: capitalizeWords(data.city),
+      address: capitalizeWords(data.address),
+    };
 
-  const fetchArenas = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/arenas/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    if (editingArena) {
+      updateArena(
+        { id: editingArena.id, payload: capitalizedData as ArenaUpdate },
+        {
+          onSuccess: handleCloseDialog,
         },
+      );
+    } else {
+      createArena(capitalizedData, {
+        onSuccess: handleCloseDialog,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setArenas(data);
-      } else if (response.status === 403) {
-        // Usuário ainda não tem arenas
-        setArenas([]);
-      } else {
-        toast.error("Erro ao carregar arenas");
-      }
-    } catch (err) {
-      console.error("Erro ao buscar arenas:", err);
-      toast.error("Erro ao carregar arenas");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchArenas();
-  }, [token]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.city || !formData.address) {
-      toast.error("Todos os campos são obrigatórios");
-      return;
-    }
-
-    try {
-      if (editingArena) {
-        // Atualizar arena existente
-        const response = await fetch(
-          `${API_BASE}/arenas/${editingArena.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(formData),
-          }
-        );
-
-        if (response.ok) {
-          toast.success("Arena atualizada com sucesso");
-          fetchArenas();
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao atualizar arena");
-        }
-      } else {
-        // Criar nova arena
-        const response = await fetch(`${API_BASE}/arenas/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        });
-
-        if (response.ok) {
-          toast.success("Arena criada com sucesso");
-          fetchArenas();
-          handleCloseDialog();
-        } else {
-          const error = await response.json();
-          toast.error(error.detail || "Erro ao criar arena");
-        }
-      }
-    } catch (err) {
-      console.error("Erro:", err);
-      toast.error("Erro ao salvar arena");
-    }
-  };
-
-  const handleDelete = async (arenaId: number) => {
-    if (!confirm("Tem certeza que deseja deletar esta arena? Todas as quadras, horários e reservas serão removidos.")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/arenas/${arenaId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        toast.success("Arena deletada com sucesso");
-        fetchArenas();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || "Erro ao deletar arena");
-      }
-    } catch (err) {
-      console.error("Erro:", err);
-      toast.error("Erro ao deletar arena");
     }
   };
 
   const handleEdit = (arena: Arena) => {
     setEditingArena(arena);
-    setFormData({
+    form.reset({
       name: arena.name,
       city: arena.city,
       address: arena.address,
@@ -166,13 +91,43 @@ export default function OwnerArenas() {
     setDialogOpen(true);
   };
 
+  const handleDelete = (arena: Arena) => {
+    if (arenas.length <= 1) {
+      toast.error("Você precisa manter pelo menos 1 arena cadastrada.");
+      return;
+    }
+
+    setArenaToDelete(arena);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!arenaToDelete) return;
+
+    deleteArena(arenaToDelete.id, {
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        setArenaToDelete(null);
+      },
+    });
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingArena(null);
-    setFormData({ name: "", city: "", address: "" });
+    form.reset({
+      name: "",
+      city: "",
+      address: "",
+    });
   };
 
-  if (loading) {
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setArenaToDelete(null);
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -180,80 +135,156 @@ export default function OwnerArenas() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-8 text-center">
+        <p className="text-gray-700 text-lg font-medium">
+          Não foi possível carregar suas arenas
+        </p>
+        <p className="text-gray-500 text-sm mt-2">
+          Tente novamente em alguns instantes.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Minhas Arenas</h2>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 text-sm mt-1">
             Gerencie todas as suas arenas esportivas
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
+            <Button
+              size="sm"
+              className="flex items-center gap-2 whitespace-nowrap w-max p-6"
+            >
+              <Plus className="h-4 w-4" />
               Nova Arena
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {editingArena ? "Editar Arena" : "Nova Arena"}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome da Arena</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Ex: Arena Central"
-                  required
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  rules={{ required: "Nome da arena é obrigatório" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Arena</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: Arena Central" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="city">Cidade</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) =>
-                    setFormData({ ...formData, city: e.target.value })
-                  }
-                  placeholder="Ex: São Paulo"
-                  required
+                <FormField
+                  control={form.control}
+                  name="city"
+                  rules={{ required: "Cidade é obrigatória" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: São Paulo" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div>
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="Ex: Rua Exemplo, 123"
-                  required
+                <FormField
+                  control={form.control}
+                  name="address"
+                  rules={{ required: "Endereço é obrigatório" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endereço</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: Rua Exemplo, 123" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={handleCloseDialog}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingArena ? "Atualizar" : "Criar"}
-                </Button>
-              </div>
-            </form>
+                <div className="grid grid-cols-2 gap-2 justify-end pt-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleCloseDialog}
+                    disabled={isCreating || isUpdating}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button disabled={isCreating || isUpdating}>
+                    {isUpdating
+                      ? "Atualizando..."
+                      : isCreating
+                        ? "Criando..."
+                        : editingArena
+                          ? "Atualizar"
+                          : "Criar"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>
+              Tem certeza que deseja deletar a arena
+              {arenaToDelete ? ` "${arenaToDelete.name}"` : ""}?
+            </p>
+            <p className="text-red-600">
+              Todas as quadras, horários e reservas serão removidos.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={handleCloseDeleteDialog}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Buscar arenas por nome, cidade ou endereço..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {arenas.length === 0 ? (
@@ -273,50 +304,55 @@ export default function OwnerArenas() {
             Criar Primeira Arena
           </Button>
         </div>
+      ) : filteredArenas.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            Nenhuma arena encontrada com essa busca
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {arenas.map((arena) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredArenas.map((arena) => (
             <div
               key={arena.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-all border border-gray-100"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <Building2 className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {arena.name}
-                    </h3>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-gray-900 truncate">
+                    {capitalizeWords(arena.name)}
+                  </h3>
+                  <div className="space-y-1 mt-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4 text-green-600 " />
+                      <span className="truncate">
+                        {capitalizeWords(arena.city)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 line-clamp-2">
+                      {capitalizeWords(arena.address)}
+                    </p>
                   </div>
                 </div>
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <Building2 className="h-5 w-5 text-green-600" />
+                </div>
               </div>
-              <div className="space-y-2 mb-4">
-                <p className="text-gray-600 text-sm">
-                  <span className="font-medium">Cidade:</span> {arena.city}
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <span className="font-medium">Endereço:</span>{" "}
-                  {arena.address}
-                </p>
-              </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 pt-3 gap-3 border-t border-gray-100">
                 <Button
                   variant="secondary"
-                  size="sm"
-                  className="flex-1"
                   onClick={() => handleEdit(arena)}
+                  disabled={isUpdating || isDeleting}
                 >
                   <Pencil className="h-4 w-4 mr-1" />
                   Editar
                 </Button>
                 <Button
                   variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(arena.id)}
+                  onClick={() => handleDelete(arena)}
+                  disabled={isDeleting || isUpdating}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             </div>

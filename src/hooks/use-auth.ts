@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { decodeJwt } from "jose";
 import { http } from "../api/http";
 import { UserResponseSchema } from "../schemas/user.schemas";
 import type { User, UserRegister } from "../types/user";
@@ -33,19 +34,50 @@ const register = async (payload: UserRegister): Promise<any> => {
 };
 
 // ============================================================================
+// Token helpers
+// ============================================================================
+
+const getValidToken = () => {
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+
+  try {
+    const { exp } = decodeJwt(token);
+    if (exp && exp * 1000 < Date.now()) {
+      localStorage.removeItem("access_token");
+      return null;
+    }
+  } catch {
+    localStorage.removeItem("access_token");
+    return null;
+  }
+
+  return token;
+};
+
+// ============================================================================
 // React Query Hooks
 // ============================================================================
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const token = localStorage.getItem("access_token");
+  const token = getValidToken();
 
-  const { data: user, isLoading, refetch } = useQuery<User, Error>({
+  const {
+    data: user,
+    isLoading,
+    refetch,
+    error,
+  } = useQuery<User, Error>({
     queryKey: ["me"],
     queryFn: getMe,
     enabled: !!token,
     retry: false,
   });
+
+  if (error) {
+    console.error("[useAuth] Erro ao buscar usuário:", error);
+  }
 
   const authLogin = async (jwt: string) => {
     localStorage.setItem("access_token", jwt);
@@ -59,6 +91,11 @@ export function useAuth() {
     queryClient.clear();
   };
 
+  const refreshUser = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["me"] });
+    await refetch();
+  };
+
   return {
     user,
     token,
@@ -66,6 +103,7 @@ export function useAuth() {
     isAuthenticated: !!user,
     login: authLogin,
     logout,
+    refreshUser,
   };
 }
 

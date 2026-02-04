@@ -4,6 +4,7 @@ import type {
   ScheduleUpdateSchema,
   ScheduleResponseSchema,
   ScheduleWithAvailabilitySchema,
+  ScheduleWithCourtSchema,
   ScheduleBatchRequestSchema,
 } from "../schemas/schedule.schemas";
 
@@ -14,3 +15,5 @@ export type ScheduleWithAvailability = z.infer<
   typeof ScheduleWithAvailabilitySchema
 >;
 export type ScheduleBatchRequest = z.infer<typeof ScheduleBatchRequestSchema>;
+
+export type ScheduleWithCourt = z.infer<typeof ScheduleWithCourtSchema>;

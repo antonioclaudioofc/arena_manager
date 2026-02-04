@@ -4,10 +4,13 @@ import { useNavigate } from "react-router";
 import { ArrowLeft, Building2, MoveLeft } from "lucide-react";
 import logo from "../assets/logo.svg";
 import { Button } from "../components/Button";
+import { capitalizeWords } from "../utils/capitalizeWords";
+import { isDemoClient } from "../utils/isDemoUser";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const demoClient = isDemoClient(user);
 
   const getRoleName = (role: string) => {
     const roles: Record<string, string> = {
@@ -64,7 +67,7 @@ export default function Profile() {
               </div>
               <div className="flex-1">
                 <h2 className="text-3xl font-bold text-gray-900 max-md:text-xl">
-                  {user.name}
+                  {capitalizeWords(user.name)}
                 </h2>
                 <p className="text-gray-600 mt-1">{user.email}</p>
               </div>
@@ -86,7 +89,7 @@ export default function Profile() {
             <div>
               <p className="text-sm text-gray-600">Nome Completo</p>
               <p className="text-lg font-medium text-gray-900 max-md:text-base">
-                {user?.name}
+                {capitalizeWords(user!.name)}
               </p>
             </div>
             <div>
@@ -104,7 +107,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {user?.role === "client" && (
+        {user?.role === "client" && !demoClient && (
           <div className=" bg-white rounded-lg shadow-md p-8 border border-green-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-green-600 p-4 rounded-full shrink-0">
@@ -119,8 +122,33 @@ export default function Profile() {
                   quadras e horários. É simples e rápido!
                 </p>
                 <Button
-                  onClick={() => navigate("/owner/arenas")}
+                  onClick={() => navigate("/become-owner")}
                   className="flex items-center gap-2"
+                >
+                  <Building2 className="h-5 w-5" />
+                  Cadastrar Minha Arena
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {user?.role === "client" && demoClient && (
+          <div className="bg-white rounded-lg shadow-md p-8 border border-amber-200">
+            <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
+              <div className="bg-amber-500 p-4 rounded-full shrink-0">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Conta demo
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Este usuário com username "client" não pode cadastrar arenas.
+                </p>
+                <Button
+                  disabled
+                  className="flex items-center gap-2 opacity-70 cursor-not-allowed"
                 >
                   <Building2 className="h-5 w-5" />
                   Cadastrar Minha Arena
