@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useMemo } from "react";
 import {
   useCatalogArenas,
   useCatalogCourtsByArena,
@@ -49,7 +49,8 @@ export default function Home() {
     selectedCity,
   );
 
-  const { refetch: refetchReservations } = useUserReservations(!!token);
+  const { data: reservations = [], refetch: refetchReservations } =
+    useUserReservations(!!token);
 
   const { data: courts = [], refetch: refetchCourts } = useCatalogCourtsByArena(
     selectedArena?.id || null,
@@ -60,7 +61,28 @@ export default function Home() {
     !!selectedArena,
   );
 
-  const enrichedScheduleMap = schedulesWithCourts.reduce(
+  const datePills = useDatePills();
+
+  const reservedScheduleIds = useMemo(() => {
+    return reservations
+      .filter((reservation) => reservation.status === "active")
+      .map(
+        (reservation) =>
+          reservation.schedule?.id ?? reservation.schedule_id ?? null,
+      )
+      .filter((id): id is number => typeof id === "number");
+  }, [reservations]);
+
+  const selectedDateIso = datePills[selectedDateIndex]?.iso;
+  const filteredSchedules = selectedDateIso
+    ? schedulesWithCourts.filter(
+        (schedule) =>
+          schedule.date === selectedDateIso ||
+          schedule.date.startsWith(`${selectedDateIso}T`),
+      )
+    : schedulesWithCourts;
+
+  const enrichedScheduleMap = filteredSchedules.reduce(
     (acc: Record<number, any[]>, schedule) => {
       if (!acc[schedule.court_id]) acc[schedule.court_id] = [];
       acc[schedule.court_id].push(schedule);
@@ -68,8 +90,6 @@ export default function Home() {
     },
     {},
   );
-
-  const datePills = useDatePills();
 
   const refetchData = () => {
     schedulesQueries.forEach((q: any) => q.refetch && q.refetch());
@@ -334,6 +354,7 @@ export default function Home() {
                   <CourtList
                     courts={courts}
                     scheduleMap={enrichedScheduleMap}
+                    reservedScheduleIds={reservedScheduleIds}
                     onReservationSuccess={refetchData}
                   />
                 </div>
