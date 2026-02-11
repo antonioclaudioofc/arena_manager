@@ -6,10 +6,12 @@ import type { ScheduleWithCourt } from "../types/schedule";
 export default function CourtList({
   courts,
   scheduleMap,
+  reservedScheduleIds = [],
   onReservationSuccess,
 }: {
   courts: Court[];
   scheduleMap: Record<number, ScheduleWithCourt[]>;
+  reservedScheduleIds?: number[];
   onReservationSuccess?: () => void;
 }) {
   return (
@@ -53,6 +55,7 @@ export default function CourtList({
                   <ScheduleCard
                     key={schedule.id}
                     schedule={schedule}
+                    isReserved={reservedScheduleIds.includes(schedule.id)}
                     onReservationSuccess={onReservationSuccess}
                   />
                 ))

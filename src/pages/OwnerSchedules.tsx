@@ -32,6 +32,14 @@ import { capitalizeWords } from "../utils/capitalizeWords";
 import type { Schedule } from "../types/schedule";
 
 export default function OwnerSchedules() {
+  const getTodayDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const { data: arenas = [], isLoading: arenasLoading } = useOwnerArenas();
   const [selectedArena, setSelectedArena] = useState<number | null>(null);
   const { data: courts = [], isLoading: courtsLoading } =
@@ -39,6 +47,7 @@ export default function OwnerSchedules() {
   const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
   const { data: schedules = [], isLoading: schedulesLoading } =
     useOwnerSchedulesByCourt(selectedCourt);
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [formArenaId, setFormArenaId] = useState<number | null>(null);
   const [formCourtId, setFormCourtId] = useState<number | null>(null);
   const { data: formCourts = [] } = useOwnerCourtsByArena(formArenaId);
@@ -301,7 +310,11 @@ export default function OwnerSchedules() {
     );
   }
 
-  const groupedSchedules = schedules.reduce(
+  const visibleSchedules = selectedDate
+    ? schedules.filter((schedule) => schedule.date === selectedDate)
+    : schedules;
+
+  const groupedSchedules = visibleSchedules.reduce(
     (acc, schedule) => {
       if (!acc[schedule.date]) {
         acc[schedule.date] = [];
@@ -322,7 +335,16 @@ export default function OwnerSchedules() {
               Gerencie os horários disponíveis
             </p>
           </div>
-          <div className="flex gap-2 items-center flex-wrap">
+          <div className="flex gap-3 items-end flex-wrap">
+            <div className="min-w-[180px]">
+              <Label htmlFor="schedule_day">Dia</Label>
+              <Input
+                id="schedule_day"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+            </div>
             <Dialog
               open={batchDialogOpen}
               onOpenChange={(open) => {
@@ -636,7 +658,7 @@ export default function OwnerSchedules() {
         </div>
       </div>
 
-      {schedules.length === 0 ? (
+      {visibleSchedules.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-12 text-center">
           <CalendarDays className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">

@@ -13,9 +13,11 @@ import { Button } from "./Button";
 
 export default function ScheduleCard({
   schedule,
+  isReserved = false,
   onReservationSuccess,
 }: {
   schedule: ScheduleWithCourt;
+  isReserved?: boolean;
   onReservationSuccess?: () => void;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -29,9 +31,7 @@ export default function ScheduleCard({
         onReservationSuccess?.();
       },
       onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao fazer reserva"
-        );
+        toast.error(error.response?.data?.message || "Erro ao fazer reserva");
       },
     });
   };
@@ -39,11 +39,20 @@ export default function ScheduleCard({
   return (
     <>
       <div
-        onClick={() => setDialogOpen(true)}
-        className={`flex items-center gap-3 p-3 rounded-lg shadow-sm bg-white hover:bg-gray-50 cursor-pointer`}
+        onClick={() => {
+          if (isReserved) return;
+          setDialogOpen(true);
+        }}
+        className={`flex items-center gap-3 p-3 rounded-lg shadow-sm bg-white ${
+          isReserved
+            ? "cursor-not-allowed opacity-70"
+            : "hover:bg-gray-50 cursor-pointer"
+        }`}
       >
         <div
-          className={`px-3 py-2 rounded-md text-sm font-medium chip-is_available`}
+          className={`px-3 py-2 rounded-md text-sm font-medium ${
+            isReserved ? "bg-gray-100 text-gray-600" : "chip-is_available"
+          }`}
         >
           <div className="text-sm">
             {schedule.start_time} às {schedule.end_time}
@@ -51,10 +60,10 @@ export default function ScheduleCard({
         </div>
         <div className="text-sm text-gray-600">
           <span
-            style={{ color: "var(--brand-600)" }}
-            className="font-semibold"
+            style={isReserved ? undefined : { color: "var(--brand-600)" }}
+            className={`font-semibold ${isReserved ? "text-gray-500" : ""}`}
           >
-            Disponível
+            {isReserved ? "Indisponível" : "Disponível"}
           </span>
         </div>
       </div>
@@ -80,11 +89,7 @@ export default function ScheduleCard({
             >
               Cancelar
             </Button>
-            <Button
-              type="button"
-              onClick={handleReserve}
-              disabled={isPending}
-            >
+            <Button type="button" onClick={handleReserve} disabled={isPending}>
               {isPending ? "Reservando..." : "Confirmar Reserva"}
             </Button>
           </div>
