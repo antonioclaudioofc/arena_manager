@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import App from "./App";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmailPending from "./pages/VerifyEmailPending";
 import { Toaster } from "sonner";
 
 import PublicRoute from "./routes/PublicRoute";
@@ -29,6 +30,7 @@ import OwnerArenas from "./pages/OwnerArenas";
 import OwnerCourts from "./pages/OwnerCourts";
 import OwnerSchedules from "./pages/OwnerSchedules";
 import BecomeOwner from "./pages/BecomeOwner";
+import CourtBooking from "./pages/CourtBooking";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./providers/AuthProvider";
@@ -55,6 +57,14 @@ createRoot(document.getElementById("root")!).render(
             element={
               <PublicRoute>
                 <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/verify-email-pending"
+            element={
+              <PublicRoute>
+                <VerifyEmailPending />
               </PublicRoute>
             }
           />
@@ -102,6 +112,7 @@ createRoot(document.getElementById("root")!).render(
               </AuthenticatedRoute>
             }
           />
+          <Route path="/court-booking" element={<CourtBooking />} />
           <Route
             path="/user/profile"
             element={

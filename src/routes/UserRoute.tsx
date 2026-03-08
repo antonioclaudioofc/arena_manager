@@ -18,7 +18,7 @@ export default function UserRoute({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!user || user.role !== "client") {
+  if (!user || user.role !== "player") {
     return <Navigate to="/" replace />;
   }
 

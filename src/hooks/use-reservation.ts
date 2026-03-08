@@ -12,15 +12,17 @@ const getUserReservations = async (): Promise<Reservation[]> => {
 };
 
 const getOwnerReservations = async (): Promise<Reservation[]> => {
-  const { data } = await http.get("/reservations/me");
+  const { data } = await http.get("/reservations/owner");
   return data;
 };
 
-const deleteReservation = async (id: number): Promise<void> => {
+const deleteReservation = async (id: string | number): Promise<void> => {
   await http.delete(`/reservations/${id}`);
 };
 
-const createReservation = async (scheduleId: number): Promise<Reservation> => {
+const createReservation = async (
+  scheduleId: string | number,
+): Promise<Reservation> => {
   const { data } = await http.post("/reservations/", {
     schedule_id: scheduleId,
   });
@@ -54,8 +56,8 @@ export function useOwnerReservations(enabled: boolean = true) {
 
 export function useDeleteReservation() {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) => deleteReservation(id),
+  return useMutation<void, Error, string | number>({
+    mutationFn: (id: string | number) => deleteReservation(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
     },
@@ -64,8 +66,8 @@ export function useDeleteReservation() {
 
 export function useCreateReservation() {
   const queryClient = useQueryClient();
-  return useMutation<Reservation, Error, number>({
-    mutationFn: (scheduleId: number) => createReservation(scheduleId),
+  return useMutation<Reservation, Error, string | number>({
+    mutationFn: (scheduleId: string | number) => createReservation(scheduleId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reservations"] });
     },

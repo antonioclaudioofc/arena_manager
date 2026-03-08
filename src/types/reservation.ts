@@ -1,43 +1,52 @@
 import z from "zod";
 
 export const ReservationSchema = z.object({
-  id: z.number(),
-  schedule_id: z.number().optional(),
+  id: z.uuid(),
+  schedule_id: z.uuid().optional(),
+  user_id: z.uuid().optional(),
   status: z.string(),
-  created_at: z.string(),
-  schedule: z.object({
-    id: z.number(),
-    date: z.string(),
-    start_time: z.string(),
-    end_time: z.string(),
-    court: z.object({
-      id: z.number(),
-      name: z.string(),
-      sports_type: z.string().optional(),
-    }),
-  }).optional(),
+  created_at: z.string().optional(),
+  cancelled_at: z.string().nullable().optional(),
+  schedule: z
+    .object({
+      id: z.uuid(),
+      date: z.string(),
+      start_time: z.string(),
+      end_time: z.string(),
+      court: z
+        .object({
+          id: z.uuid(),
+          name: z.string(),
+          sport_type: z.string().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export const AdminReservationSchema = z.object({
-  id: z.number(),
+  id: z.uuid(),
   status: z.string(),
-  created_at: z.string(),
-  user: z.object({
-    id: z.number(),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    username: z.string().optional(),
-    email: z.string().optional(),
+  created_at: z.string().optional(),
+  cancelled_at: z.string().nullable().optional(),
+  client: z.object({
+    id: z.uuid(),
+    name: z.string(),
+    email: z.string(),
+  }),
+  arena: z.object({
+    id: z.uuid(),
+    name: z.string(),
+  }),
+  court: z.object({
+    id: z.uuid(),
+    name: z.string(),
   }),
   schedule: z.object({
-    id: z.number(),
+    id: z.uuid(),
     date: z.string(),
     start_time: z.string(),
     end_time: z.string(),
-    court: z.object({
-      id: z.number(),
-      name: z.string(),
-    }),
   }),
 });
 

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useContext } from "react";
 import { Navigate } from "react-router";
-import { useRegister, useLogin } from "../hooks/use-auth";
+import { useRegister } from "../hooks/use-auth";
 import { Button } from "../components/Button";
 import {
   Form,
@@ -48,7 +48,6 @@ export default function Register() {
     resolver: zodResolver(UserRequestSchema),
     defaultValues: {
       email: "",
-      username: "",
       name: "",
       password: "",
       confirm_password: "",
@@ -56,7 +55,6 @@ export default function Register() {
   });
 
   const registerMutation = useRegister();
-  const loginMutation = useLogin();
 
   const onSubmit = async (values: AuthSchema) => {
     setLoading(true);
@@ -65,38 +63,12 @@ export default function Register() {
       const { confirm_password, ...rest } = values;
 
       await registerMutation.mutateAsync(rest as any);
-
-      try {
-        const tokenData = await loginMutation.mutateAsync({
-          username: rest.username as string,
-          password: rest.password as string,
-        });
-
-        if (tokenData?.access_token) {
-          try {
-            await auth.login(tokenData.access_token);
-          } catch {
-            localStorage.setItem("access_token", tokenData.access_token);
-          }
-
-          toast.success("Registrado e autenticado com sucesso!");
-
-          if (roleParam === "owner") {
-            navigate("/owner/arenas?newArena=true");
-          } else {
-            navigate("/");
-          }
-
-          return;
-        }
-
-        toast.success("Conta criada. Por favor faça login.");
-        navigate("/login");
-      } catch (loginErr: any) {
-        console.error("Auto-login falhou:", loginErr);
-        toast.success("Conta criada. Por favor faça login.");
-        navigate("/login");
-      }
+      navigate("/verify-email-pending", {
+        state: {
+          email: rest.email,
+          password: rest.password,
+        },
+      });
     } catch (err: any) {
       console.error(err);
       toast.error(getErrorMessage(err));
@@ -169,22 +141,6 @@ export default function Register() {
                     </FormLabel>
                     <FormControl>
                       <Input placeholder="Seu Nome Completo" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-900 font-semibold">
-                      Usuário
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu_usuario" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

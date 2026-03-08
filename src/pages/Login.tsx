@@ -19,10 +19,11 @@ import { useLogin } from "../hooks/use-auth";
 import { Input } from "../components/Input";
 import logo from "../assets/logo.svg";
 import { MoveLeft, LogIn, CheckCircle2, Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { AuthContext } from "../providers/AuthProvider";
 import { UserLoginSchema } from "../schemas/user.schemas";
 import { getErrorMessage } from "../api/http";
+import { isUnverifiedEmailError } from "../hooks/use-auth";
 
 type LoginSchema = z.infer<typeof UserLoginSchema>;
 
@@ -31,10 +32,14 @@ export default function Login() {
 
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = (location.state as { email?: string } | null) ?? null;
+  const prefilledEmail = locationState?.email ?? "";
+  const unverifiedToastId = "email-unverified";
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(UserLoginSchema),
-    defaultValues: { username: "", password: "" },
+    defaultValues: { email: prefilledEmail, password: "" },
   });
 
   const loginMutation = useLogin();
@@ -42,9 +47,9 @@ export default function Login() {
 
   if (auth.token) return <Navigate to="/" replace />;
 
-  const handleDemoLogin = async (username: string, password: string) => {
+  const handleDemoLogin = async (email: string, password: string) => {
     try {
-      const data = await loginMutation.mutateAsync({ username, password });
+      const data = await loginMutation.mutateAsync({ email, password });
 
       if (!data || !data.access_token) {
         toast.error("Erro ao entrar");
@@ -56,12 +61,21 @@ export default function Login() {
       navigate("/");
     } catch (err: any) {
       console.error(err);
+      if (isUnverifiedEmailError(err)) {
+        toast.dismiss(unverifiedToastId);
+        toast.info(
+          "Seu e-mail ainda nao foi verificado. Enviamos um novo e-mail de verificacao para voce.",
+          { id: unverifiedToastId, duration: 1000 },
+        );
+        return;
+      }
+
       toast.error(getErrorMessage(err));
     }
   };
 
   const onSubmit = async (values: LoginSchema) => {
-    await handleDemoLogin(values.username, values.password);
+    await handleDemoLogin(values.email, values.password);
   };
 
   return (
@@ -131,14 +145,14 @@ export default function Login() {
             >
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-900 font-semibold">
-                      Nome de Usuário
+                      E-mail
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Seu nome de usuário" {...field} />
+                      <Input type="email" placeholder="seu@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -197,7 +211,7 @@ export default function Login() {
             </p>
             <div className="space-y-3">
               <Button
-                onClick={() => handleDemoLogin("owner", "123456")}
+                onClick={() => handleDemoLogin("owner@arena.demo", "123456")}
                 disabled={loading}
                 variant="outline"
                 className="w-full bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
@@ -205,12 +219,12 @@ export default function Login() {
                 Demo Dono
               </Button>
               <Button
-                onClick={() => handleDemoLogin("client", "123456")}
+                onClick={() => handleDemoLogin("player@arena.demo", "123456")}
                 disabled={loading}
                 variant="outline"
                 className="w-full bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100"
               >
-                Demo Cliente
+                Demo Jogador
               </Button>
             </div>
           </div>

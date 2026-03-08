@@ -1,0 +1,16 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="courtBg" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F4E79"/>
+      <stop offset="1" stop-color="#3D7FB4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" rx="28" fill="url(#courtBg)"/>
+  <circle cx="1020" cy="40" r="110" fill="white" fill-opacity="0.09"/>
+  <rect x="130" y="95" width="940" height="250" rx="20" stroke="#E8F4FF" stroke-width="10" fill="none"/>
+  <line x1="600" y1="95" x2="600" y2="345" stroke="#E8F4FF" stroke-width="8"/>
+  <line x1="130" y1="220" x2="1070" y2="220" stroke="#E8F4FF" stroke-width="8"/>
+  <line x1="365" y1="95" x2="365" y2="345" stroke="#E8F4FF" stroke-width="6" stroke-opacity="0.85"/>
+  <line x1="835" y1="95" x2="835" y2="345" stroke="#E8F4FF" stroke-width="6" stroke-opacity="0.85"/>
+  <text x="170" y="72" fill="#F1F8FF" font-size="44" font-family="Arial, sans-serif" font-weight="700">QUADRA</text>
+</svg>

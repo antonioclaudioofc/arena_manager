@@ -4,7 +4,6 @@ import {
   useCatalogCourtsByArena,
   useCatalogSchedulesByCourts,
   useCatalogArenasFiltering,
-  useDatePills,
 } from "../hooks/use-catalog";
 import { useUserReservations } from "../hooks/use-reservation";
 import CourtList from "../components/CourtList";
@@ -21,19 +20,14 @@ import {
 } from "lucide-react";
 import { Input } from "../components/Input";
 import { Button } from "../components/Button";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
 import { capitalizeWords } from "../utils/capitalizeWords";
 import { AuthContext } from "../providers/AuthProvider";
 import type { Arena } from "../types/arena";
 import { isDemoClient } from "../utils/isDemoUser";
 
-dayjs.locale("pt-br");
-
 export default function Home() {
   const [selectedArena, setSelectedArena] = useState<Arena | null>(null);
   const [arenaView, setArenaView] = useState<"list" | "detail">("list");
-  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
@@ -49,41 +43,36 @@ export default function Home() {
     selectedCity,
   );
 
-  const { data: reservations = [], refetch: refetchReservations } =
-    useUserReservations(!!token);
+  const { data: reservations = [] } = useUserReservations(!!token);
 
-  const { data: courts = [], refetch: refetchCourts } = useCatalogCourtsByArena(
+  const { data: courts = [] } = useCatalogCourtsByArena(
     selectedArena?.id || null,
   );
 
-  const { schedulesWithCourts, schedulesQueries } = useCatalogSchedulesByCourts(
+  const { schedulesWithCourts } = useCatalogSchedulesByCourts(
     courts as any[],
     !!selectedArena,
   );
 
-  const datePills = useDatePills();
-
   const reservedScheduleIds = useMemo(() => {
+    const blockedStatuses = new Set([
+      "cancelled",
+      "expired",
+      "completed",
+      "no_show",
+    ]);
+
     return reservations
-      .filter((reservation) => reservation.status === "active")
+      .filter((reservation) => !blockedStatuses.has(reservation.status))
       .map(
         (reservation) =>
           reservation.schedule?.id ?? reservation.schedule_id ?? null,
       )
-      .filter((id): id is number => typeof id === "number");
+      .filter((id): id is string => typeof id === "string");
   }, [reservations]);
 
-  const selectedDateIso = datePills[selectedDateIndex]?.iso;
-  const filteredSchedules = selectedDateIso
-    ? schedulesWithCourts.filter(
-        (schedule) =>
-          schedule.date === selectedDateIso ||
-          schedule.date.startsWith(`${selectedDateIso}T`),
-      )
-    : schedulesWithCourts;
-
-  const enrichedScheduleMap = filteredSchedules.reduce(
-    (acc: Record<number, any[]>, schedule) => {
+  const enrichedScheduleMap = schedulesWithCourts.reduce(
+    (acc: Record<string, any[]>, schedule) => {
       if (!acc[schedule.court_id]) acc[schedule.court_id] = [];
       acc[schedule.court_id].push(schedule);
       return acc;
@@ -91,16 +80,9 @@ export default function Home() {
     {},
   );
 
-  const refetchData = () => {
-    schedulesQueries.forEach((q: any) => q.refetch && q.refetch());
-    refetchReservations && refetchReservations();
-    refetchCourts && refetchCourts();
-  };
-
   const handleSelectArena = (arena: Arena) => {
     setSelectedArena(arena);
     setArenaView("detail");
-    setSelectedDateIndex(0);
   };
 
   const handleBackToList = () => {
@@ -221,44 +203,52 @@ export default function Home() {
                       <div
                         key={arena.id}
                         onClick={() => handleSelectArena(arena)}
-                        className="card card-clickable group overflow-hidden relative"
+                        className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl cursor-pointer"
                       >
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity  from-emerald-600 to-emerald-500"></div>
-
-                        <div className="relative z-10">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="p-3 rounded-xl group-hover:scale-110 transition-transform shrink-0 shadow-sm bg-emerald-100">
-                              <Building2 className="text-emerald-600 w-7 h-7" />
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
-                              <Star
-                                className="text-amber-500 w-4 h-4"
-                                fill="currentColor"
-                              />
-                              <span className="text-sm font-bold text-amber-500">
-                                4.5
-                              </span>
-                            </div>
+                        <div className="relative h-36 overflow-hidden">
+                          <img
+                            src="/arena-card-cover.svg"
+                            alt={`Imagem de capa da arena ${arena.name}`}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/20 to-transparent" />
+                          <div className="absolute top-3 left-3 rounded-lg bg-white/90 p-2 backdrop-blur-sm">
+                            <Building2 className="h-5 w-5 text-emerald-700" />
                           </div>
+                          <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-800">
+                            Arena
+                          </div>
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1">
+                            <Star
+                              className="h-3.5 w-3.5 text-amber-500"
+                              fill="currentColor"
+                            />
+                            <span className="text-xs font-bold text-amber-600">
+                              4.5
+                            </span>
+                          </div>
+                        </div>
 
-                          <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-emerald-600 transition-colors text-gray-900">
+                        <div className="p-5">
+                          <h3 className="mb-2 line-clamp-1 text-lg font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
                             {capitalizeWords(arena.name)}
                           </h3>
 
-                          <div className="space-y-2 mb-5">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="text-emerald-600 w-4 h-4" />
-                              <p className="text-sm font-semibold text-gray-500">
+                          <div className="mb-5 space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                              <MapPin className="h-4 w-4 text-emerald-600" />
+                              <span className="line-clamp-1">
                                 {capitalizeWords(arena.city)}
-                              </p>
+                              </span>
                             </div>
-                            <p className="text-xs leading-relaxed pl-6 text-gray-500">
+                            <p className="line-clamp-2 pl-6 text-sm text-gray-500">
                               {capitalizeWords(arena.address)}
                             </p>
                           </div>
 
                           <Button className="w-full flex items-center justify-center gap-2">
-                            Ver horários
+                            Ver horários da arena
                             <ChevronDown size={18} className="-rotate-90" />
                           </Button>
                         </div>
@@ -314,32 +304,6 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="card">
-                <h3 className="text-lg font-bold mb-4 text-gray-900">
-                  Selecione a data
-                </h3>
-                <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
-                  {datePills.map((d, i) => (
-                    <button
-                      key={d.iso}
-                      onClick={() => setSelectedDateIndex(i)}
-                      className={`px-3 md:px-4 py-3 rounded-lg border-2 transition shrink-0 cursor-pointer ${
-                        i === selectedDateIndex
-                          ? "border-emerald-600 bg-emerald-50 text-emerald-600"
-                          : "border-gray-200 bg-white text-gray-500"
-                      }`}
-                    >
-                      <div className="text-xs font-bold">
-                        {dayjs(d.iso).format("ddd").toUpperCase()}
-                      </div>
-                      <div className="text-lg font-bold">
-                        {dayjs(d.iso).format("DD")}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {courts.length === 0 ? (
                 <div className="card text-center p-8 md:p-12">
                   <h3 className="text-xl font-bold mb-2 text-gray-900">
@@ -355,7 +319,10 @@ export default function Home() {
                     courts={courts}
                     scheduleMap={enrichedScheduleMap}
                     reservedScheduleIds={reservedScheduleIds}
-                    onReservationSuccess={refetchData}
+                    arenaInfo={{
+                      name: selectedArena.name,
+                      address: selectedArena.address,
+                    }}
                   />
                 </div>
               )}
@@ -364,7 +331,7 @@ export default function Home() {
         </div>
       </div>
 
-      {(!user || user?.role === "client") && arenaView === "list" && (
+      {user?.role === "player" && arenaView === "list" && (
         <div className="p-4 md:p-8 mt-8 md:mt-12 bg-emerald-50 border-t-2 border-emerald-600">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
@@ -387,7 +354,7 @@ export default function Home() {
                   if (demoClient) return;
                   if (!user) {
                     navigate("/register");
-                  } else if (user.role === "client") {
+                  } else if (user.role === "player") {
                     navigate("/become-owner");
                   } else {
                     navigate("/owner");
@@ -404,7 +371,7 @@ export default function Home() {
                   ? "Criar Arena"
                   : demoClient
                     ? "Demo não pode cadastrar"
-                    : user.role === "client"
+                    : user.role === "player"
                       ? "Cadastrar Arena"
                       : "Gerenciar Arenas"}
               </Button>

@@ -19,36 +19,13 @@ export default function App() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [showNavbar, setShowNavbar] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [isOpenDropdown, setIsOpenDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch reservations only if user is authenticated
   const { data: reservations = [] } = useUserReservations();
 
-  // Show reservations link if user is client OR if owner/admin has reservations
   const showReservationsLink =
-    auth.user?.role === "client" || (auth.user && reservations.length > 0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY < 10) {
-        setShowNavbar(true);
-      } else if (currentScrollY > lastScrollY) {
-        setShowNavbar(false);
-      } else {
-        setShowNavbar(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+    auth.user?.role === "player" || (auth.user && reservations.length > 0);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,11 +56,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col">
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 shadow-lg bg-white border-b border-gray-200 ${
-          showNavbar ? "translate-y-0" : "-translate-y-full"
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 shadow-lg bg-white border-b border-gray-200"
       >
         <div className="max-w-7xl p-6 mx-auto">
           <div className="flex items-center justify-between">
@@ -203,9 +178,23 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="pt-16">
+      <main className="pt-28 flex-1">
         <Home />
       </main>
+
+      <footer className="bg-emerald-700">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold text-white">Arena Manager</p>
+            <p className="text-sm text-emerald-100">
+              Reserve quadras e gerencie arenas com praticidade.
+            </p>
+          </div>
+          <p className="text-sm text-emerald-100 text-center md:text-right">
+            © {new Date().getFullYear()} Arena Manager. Todos os direitos reservados.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -14,7 +14,7 @@ export default function Profile() {
 
   const getRoleName = (role: string) => {
     const roles: Record<string, string> = {
-      client: "Cliente",
+      player: "Jogador",
       owner: "Proprietário de Arena",
       admin: "Administrador",
     };
@@ -93,12 +93,6 @@ export default function Profile() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Username</p>
-              <p className="text-lg font-medium text-gray-900 max-md:text-base">
-                {user?.username}
-              </p>
-            </div>
-            <div>
               <p className="text-sm text-gray-600">Tipo de Conta</p>
               <p className="text-lg font-medium text-gray-900 max-md:text-base">
                 {getRoleName(user!.role)}
@@ -107,7 +101,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {user?.role === "client" && !demoClient && (
+        {user?.role === "player" && !demoClient && (
           <div className=" bg-white rounded-lg shadow-md p-8 border border-green-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-green-600 p-4 rounded-full shrink-0">
@@ -133,7 +127,7 @@ export default function Profile() {
           </div>
         )}
 
-        {user?.role === "client" && demoClient && (
+        {user?.role === "player" && demoClient && (
           <div className="bg-white rounded-lg shadow-md p-8 border border-amber-200">
             <div className="flex items-start gap-4 max-md:flex-col max-md:items-center max-md:text-center">
               <div className="bg-amber-500 p-4 rounded-full shrink-0">
@@ -144,7 +138,7 @@ export default function Profile() {
                   Conta demo
                 </h3>
                 <p className="text-gray-700 mb-4">
-                  Este usuário com username "client" não pode cadastrar arenas.
+                  Esta conta demo não pode cadastrar arenas.
                 </p>
                 <Button
                   disabled

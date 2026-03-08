@@ -31,25 +31,23 @@ import {
 import { capitalizeWords } from "../utils/capitalizeWords";
 import type { Schedule } from "../types/schedule";
 
-export default function OwnerSchedules() {
-  const getTodayDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+const normalizeId = (value: string): string | number =>
+  /^\d+$/.test(value) ? Number(value) : value;
 
+export default function OwnerSchedules() {
   const { data: arenas = [], isLoading: arenasLoading } = useOwnerArenas();
-  const [selectedArena, setSelectedArena] = useState<number | null>(null);
+  const [selectedArena, setSelectedArena] = useState<string | number | null>(
+    null,
+  );
   const { data: courts = [], isLoading: courtsLoading } =
     useOwnerCourtsByArena(selectedArena);
-  const [selectedCourt, setSelectedCourt] = useState<number | null>(null);
+  const [selectedCourt, setSelectedCourt] = useState<string | number | null>(
+    null,
+  );
   const { data: schedules = [], isLoading: schedulesLoading } =
     useOwnerSchedulesByCourt(selectedCourt);
-  const [selectedDate, setSelectedDate] = useState(getTodayDate());
-  const [formArenaId, setFormArenaId] = useState<number | null>(null);
-  const [formCourtId, setFormCourtId] = useState<number | null>(null);
+  const [formArenaId, setFormArenaId] = useState<string | number | null>(null);
+  const [formCourtId, setFormCourtId] = useState<string | number | null>(null);
   const { data: formCourts = [] } = useOwnerCourtsByArena(formArenaId);
 
   const createSchedule = useCreateOwnerSchedule();
@@ -84,8 +82,6 @@ export default function OwnerSchedules() {
     { value: 5, label: "Sábado" },
     { value: 6, label: "Domingo" },
   ];
-
-
 
   useEffect(() => {
     if (!selectedArena && arenas.length > 0) {
@@ -195,7 +191,7 @@ export default function OwnerSchedules() {
     }
   };
 
-  const handleDelete = async (scheduleId: number) => {
+  const handleDelete = async (scheduleId: string | number) => {
     if (
       !confirm(
         "Tem certeza que deseja deletar este horário? Reservas associadas serão removidas.",
@@ -266,8 +262,6 @@ export default function OwnerSchedules() {
     }));
   };
 
-
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -310,9 +304,7 @@ export default function OwnerSchedules() {
     );
   }
 
-  const visibleSchedules = selectedDate
-    ? schedules.filter((schedule) => schedule.date === selectedDate)
-    : schedules;
+  const visibleSchedules = schedules;
 
   const groupedSchedules = visibleSchedules.reduce(
     (acc, schedule) => {
@@ -336,15 +328,6 @@ export default function OwnerSchedules() {
             </p>
           </div>
           <div className="flex gap-3 items-end flex-wrap">
-            <div className="min-w-[180px]">
-              <Label htmlFor="schedule_day">Dia</Label>
-              <Input
-                id="schedule_day"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
             <Dialog
               open={batchDialogOpen}
               onOpenChange={(open) => {
@@ -372,7 +355,7 @@ export default function OwnerSchedules() {
                       <Select
                         value={formArenaId?.toString()}
                         onValueChange={(value) =>
-                          setFormArenaId(parseInt(value))
+                          setFormArenaId(normalizeId(value))
                         }
                       >
                         <SelectTrigger id="batch_arena" className="w-full">
@@ -395,7 +378,7 @@ export default function OwnerSchedules() {
                       <Select
                         value={formCourtId?.toString()}
                         onValueChange={(value) =>
-                          setFormCourtId(parseInt(value))
+                          setFormCourtId(normalizeId(value))
                         }
                         disabled={!formArenaId || formCourts.length === 0}
                       >
@@ -555,7 +538,7 @@ export default function OwnerSchedules() {
                       <Select
                         value={formArenaId?.toString()}
                         onValueChange={(value) =>
-                          setFormArenaId(parseInt(value))
+                          setFormArenaId(normalizeId(value))
                         }
                       >
                         <SelectTrigger id="single_arena" className="w-full">
@@ -578,7 +561,7 @@ export default function OwnerSchedules() {
                       <Select
                         value={formCourtId?.toString()}
                         onValueChange={(value) =>
-                          setFormCourtId(parseInt(value))
+                          setFormCourtId(normalizeId(value))
                         }
                         disabled={!formArenaId || formCourts.length === 0}
                       >

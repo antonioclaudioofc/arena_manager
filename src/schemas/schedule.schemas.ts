@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const IdSchema = z.union([z.uuid(), z.number()]);
+
 export const ScheduleBaseSchema = z.object({
   date: z.string().optional(),
   start_time: z.string().optional(),
@@ -7,7 +9,7 @@ export const ScheduleBaseSchema = z.object({
 });
 
 export const ScheduleRequestSchema = ScheduleBaseSchema.extend({
-  court_id: z.number(),
+  court_id: IdSchema,
   date: z.string(),
   start_time: z.string(),
   end_time: z.string(),
@@ -16,8 +18,8 @@ export const ScheduleRequestSchema = ScheduleBaseSchema.extend({
 export const ScheduleUpdateSchema = ScheduleBaseSchema.partial();
 
 export const ScheduleResponseSchema = ScheduleBaseSchema.extend({
-  id: z.number(),
-  court_id: z.number(),
+  id: IdSchema,
+  court_id: IdSchema,
   date: z.string(),
   start_time: z.string(),
   end_time: z.string(),
@@ -29,14 +31,15 @@ export const ScheduleWithAvailabilitySchema = ScheduleResponseSchema.extend({
 
 export const ScheduleWithCourtSchema = ScheduleResponseSchema.extend({
   court: z.object({
-    id: z.number(),
+    id: IdSchema,
     name: z.string(),
+    sport_type: z.string().optional(),
     sports_type: z.string().optional(),
   }),
 });
 
 export const ScheduleBatchRequestSchema = z.object({
-  court_id: z.number(),
+  court_id: IdSchema,
   start_date: z.string(),
   end_date: z.string(),
   start_time: z.string(),

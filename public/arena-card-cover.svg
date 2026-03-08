@@ -1,0 +1,20 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="arenaBg" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B4F3F"/>
+      <stop offset="1" stop-color="#2E7D66"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="420" rx="28" fill="url(#arenaBg)"/>
+  <circle cx="1130" cy="60" r="120" fill="white" fill-opacity="0.08"/>
+  <circle cx="120" cy="390" r="150" fill="white" fill-opacity="0.08"/>
+  <rect x="130" y="170" width="940" height="180" rx="14" fill="#F4F7F6" fill-opacity="0.18"/>
+  <rect x="170" y="140" width="860" height="44" rx="10" fill="#E7EEEB" fill-opacity="0.34"/>
+  <rect x="220" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <rect x="360" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <rect x="500" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <rect x="640" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <rect x="780" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <rect x="920" y="215" width="90" height="90" rx="10" fill="#ECF3F0" fill-opacity="0.45"/>
+  <text x="170" y="110" fill="#F5FAF8" font-size="46" font-family="Arial, sans-serif" font-weight="700">ARENA</text>
+</svg>

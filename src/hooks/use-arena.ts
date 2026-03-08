@@ -20,14 +20,16 @@ const createArena = async (
 };
 
 const updateArena = async (
-  id: number,
+  id: string | number,
   payload: ArenaUpdate,
 ): Promise<{ message: string }> => {
   const { data } = await http.put(`/arenas/${id}`, payload);
   return data;
 };
 
-const deleteArena = async (id: number): Promise<{ message: string }> => {
+const deleteArena = async (
+  id: string | number,
+): Promise<{ message: string }> => {
   const { data } = await http.delete(`/arenas/${id}`);
   return data;
 };
@@ -67,7 +69,7 @@ export function useUpdateArena() {
   return useMutation<
     { message: string },
     Error,
-    { id: number; payload: ArenaUpdate }
+    { id: string | number; payload: ArenaUpdate }
   >({
     mutationFn: ({ id, payload }) => updateArena(id, payload),
     onSuccess: () => {
@@ -84,7 +86,7 @@ export function useUpdateArena() {
 export function useDeleteArena() {
   const queryClient = useQueryClient();
 
-  return useMutation<{ message: string }, Error, number>({
+  return useMutation<{ message: string }, Error, string | number>({
     mutationFn: deleteArena,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["arenas"] });

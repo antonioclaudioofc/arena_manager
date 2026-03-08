@@ -2,19 +2,11 @@ import z from "zod";
 
 export const UserBaseSchema = z.object({
   name: z.string().min(2).optional(),
-  username: z
-    .string()
-    .min(2)
-    .refine((value) => !value.includes(" "), {
-      message: "Usuário não pode conter espaços",
-    })
-    .optional(),
   email: z.email().optional(),
 });
 
 export const UserRequestSchema = UserBaseSchema.extend({
   email: z.email("E-mail inválido"),
-  username: z.string().min(2, "Campo obrigatório"),
   name: z.string().min(2, "Campo obrigatório"),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
   confirm_password: z.string().min(6),
@@ -24,7 +16,7 @@ export const UserRequestSchema = UserBaseSchema.extend({
 });
 
 export const UserLoginSchema = z.object({
-  username: z.string().min(2, "Campo obrigatório"),
+  email: z.email("E-mail inválido"),
   password: z.string().min(2, "Campo obrigatório"),
 });
 
@@ -34,10 +26,10 @@ export const UserUpdateSchema = UserRequestSchema.omit({
 }).partial();
 
 export const UserResponseSchema = z.object({
+  id: z.uuid(),
   email: z.email(),
-  username: z.string(),
   name: z.string(),
-  role: z.enum(["owner", "client", "admin"]),
+  role: z.enum(["owner", "player", "admin"]),
 });
 
 export const UserVerificationSchema = z.object({

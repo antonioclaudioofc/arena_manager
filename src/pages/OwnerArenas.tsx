@@ -45,6 +45,9 @@ export default function OwnerArenas() {
       name: "",
       city: "",
       address: "",
+      phone: "",
+      state: "",
+      zip_code: "",
     },
     mode: "onChange",
   });
@@ -65,6 +68,9 @@ export default function OwnerArenas() {
       name: capitalizeWords(data.name),
       city: capitalizeWords(data.city),
       address: capitalizeWords(data.address),
+      phone: data.phone,
+      state: String(data.state || "").toUpperCase(),
+      zip_code: data.zip_code,
     };
 
     if (editingArena) {
@@ -87,6 +93,9 @@ export default function OwnerArenas() {
       name: arena.name,
       city: arena.city,
       address: arena.address,
+      phone: arena.phone,
+      state: arena.state,
+      zip_code: arena.zip_code,
     });
     setDialogOpen(true);
   };
@@ -119,6 +128,9 @@ export default function OwnerArenas() {
       name: "",
       city: "",
       address: "",
+      phone: "",
+      state: "",
+      zip_code: "",
     });
   };
 
@@ -220,6 +232,57 @@ export default function OwnerArenas() {
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    rules={{ required: "Telefone é obrigatório" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ex: 11999999999" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="zip_code"
+                    rules={{ required: "CEP é obrigatório" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Ex: 01000-000" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="state"
+                  rules={{ required: "UF é obrigatória" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UF</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Ex: SP"
+                          maxLength={2}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.toUpperCase())
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <div className="grid grid-cols-2 gap-2 justify-end pt-2">
                   <Button
                     variant="secondary"
@@ -315,45 +378,58 @@ export default function OwnerArenas() {
           {filteredArenas.map((arena) => (
             <div
               key={arena.id}
-              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-all border border-gray-100"
+              className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {capitalizeWords(arena.name)}
-                  </h3>
-                  <div className="space-y-1 mt-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 text-green-600 " />
-                      <span className="truncate">
-                        {capitalizeWords(arena.city)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500 line-clamp-2">
-                      {capitalizeWords(arena.address)}
-                    </p>
-                  </div>
+              <div className="relative h-32 overflow-hidden">
+                <img
+                  src="/arena-card-cover.svg"
+                  alt={`Capa da arena ${arena.name}`}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/10 to-transparent" />
+                <div className="absolute top-3 left-3 rounded-lg bg-white/90 p-2 backdrop-blur-sm">
+                  <Building2 className="h-5 w-5 text-emerald-700" />
                 </div>
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Building2 className="h-5 w-5 text-green-600" />
+                <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-800">
+                  Arena
                 </div>
               </div>
-              <div className="grid grid-cols-2 pt-3 gap-3 border-t border-gray-100">
-                <Button
-                  variant="secondary"
-                  onClick={() => handleEdit(arena)}
-                  disabled={isUpdating || isDeleting}
-                >
-                  <Pencil className="h-4 w-4 mr-1" />
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDelete(arena)}
-                  disabled={isDeleting || isUpdating}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+
+              <div className="p-5">
+                <h3 className="mb-2 line-clamp-1 text-lg font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                  {capitalizeWords(arena.name)}
+                </h3>
+
+                <div className="mb-4 space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    <span className="line-clamp-1">
+                      {capitalizeWords(arena.city)}
+                    </span>
+                  </div>
+                  <p className="line-clamp-2 pl-6 text-sm text-gray-500">
+                    {capitalizeWords(arena.address)}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleEdit(arena)}
+                    disabled={isUpdating || isDeleting}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDelete(arena)}
+                    disabled={isDeleting || isUpdating}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import type { User } from "../types/user";
 
 export const isDemoClient = (user?: User | null) => {
-  if (!user || user.role !== "client") return false;
-  return (user.username ?? "").toLowerCase() === "client";
+  if (!user || user.role !== "player") return false;
+
+  return user.email.toLowerCase() === "player@arena.demo";
 };

@@ -35,6 +35,9 @@ export default function BecomeOwner() {
       name: "",
       city: "",
       address: "",
+      phone: "",
+      state: "",
+      zip_code: "",
       terms: false,
     },
     mode: "onChange",
@@ -44,12 +47,19 @@ export default function BecomeOwner() {
 
   const handleCreateArena = () => {
     if (demoClient) {
-      toast.error("Usuário com username \"client\" não pode cadastrar arena.");
+      toast.error("Contas demo não podem cadastrar arena.");
       return;
     }
 
     const values = form.getValues();
-    if (!values.name.trim() || !values.city.trim() || !values.address.trim()) {
+    if (
+      !values.name.trim() ||
+      !values.city.trim() ||
+      !values.address.trim() ||
+      !values.phone.trim() ||
+      !values.state.trim() ||
+      !values.zip_code.trim()
+    ) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
@@ -57,8 +67,11 @@ export default function BecomeOwner() {
     createArena(
       {
         name: values.name.trim(),
+        phone: values.phone.trim(),
         city: values.city.trim(),
         address: values.address.trim(),
+        state: values.state.trim().toUpperCase(),
+        zip_code: values.zip_code.trim(),
       },
       {
         onSuccess: async () => {
@@ -78,7 +91,12 @@ export default function BecomeOwner() {
       case 3:
         return watchedValues.city?.trim() !== "";
       case 4:
-        return watchedValues.address?.trim() !== "";
+        return (
+          watchedValues.address?.trim() !== "" &&
+          watchedValues.phone?.trim() !== "" &&
+          watchedValues.state?.trim() !== "" &&
+          watchedValues.zip_code?.trim() !== ""
+        );
       default:
         return false;
     }
@@ -157,7 +175,7 @@ export default function BecomeOwner() {
                     Conta demo
                   </h2>
                   <p className="text-gray-700 mb-6">
-                    Usuário com username "client" não pode cadastrar arenas.
+                    Contas demo não podem cadastrar arenas.
                   </p>
                   <div className="flex justify-center">
                     <Button
@@ -271,7 +289,9 @@ export default function BecomeOwner() {
                                 A plataforma cobra uma taxa de 10% sobre cada
                                 reserva
                               </li>
-                              <li>Os pagamentos são processados semanalmente</li>
+                              <li>
+                                Os pagamentos são processados semanalmente
+                              </li>
                               <li>
                                 Você é responsável pela emissão de notas fiscais
                               </li>
@@ -500,6 +520,73 @@ export default function BecomeOwner() {
                                 Inclua rua, número, bairro e complemento se
                                 necessário
                               </p>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            rules={{ required: "Informe o telefone." }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  Telefone{" "}
+                                  <span className="text-red-500">*</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Ex: 11999999999"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="zip_code"
+                            rules={{ required: "Informe o CEP." }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
+                                  CEP <span className="text-red-500">*</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Ex: 01000-000"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="state"
+                          rules={{ required: "Informe a UF." }}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                UF <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Ex: SP"
+                                  maxLength={2}
+                                  onChange={(e) =>
+                                    field.onChange(e.target.value.toUpperCase())
+                                  }
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}

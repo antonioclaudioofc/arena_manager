@@ -15,12 +15,16 @@ const getAllArenas = async (): Promise<Arena[]> => {
   return data;
 };
 
-const getAllCourtsByArena = async (arenaId: number): Promise<Court[]> => {
+const getAllCourtsByArena = async (
+  arenaId: string | number,
+): Promise<Court[]> => {
   const { data } = await http.get(`/catalog/arenas/${arenaId}/courts`);
   return data;
 };
 
-const getAllSchedulesByCourt = async (courtId: number): Promise<Schedule[]> => {
+const getAllSchedulesByCourt = async (
+  courtId: string | number,
+): Promise<Schedule[]> => {
   const { data } = await http.get(`/catalog/courts/${courtId}/schedules`);
   return data;
 };
@@ -37,7 +41,7 @@ export function useCatalogArenas() {
 }
 import type { ScheduleWithCourt } from "../types/schedule";
 
-export function useCatalogCourtsByArena(arenaId: number | null) {
+export function useCatalogCourtsByArena(arenaId: string | number | null) {
   return useQuery<Court[], Error>({
     queryKey: ["courts", arenaId],
     queryFn: () => getAllCourtsByArena(arenaId!),
@@ -45,7 +49,7 @@ export function useCatalogCourtsByArena(arenaId: number | null) {
   });
 }
 
-export function useCatalogSchedulesByCourt(courtId: number | null) {
+export function useCatalogSchedulesByCourt(courtId: string | number | null) {
   return useQuery<Schedule[], Error>({
     queryKey: ["schedules", courtId],
     queryFn: () => getAllSchedulesByCourt(courtId!),
@@ -79,9 +83,9 @@ export function useCatalogSchedulesByCourts(
           ? {
               id: court.id,
               name: court.name,
-              sports_type: court.sports_type,
+              sport_type: court.sport_type,
             }
-          : { id: s.court_id, name: "N/A", sports_type: undefined },
+          : { id: s.court_id, name: "N/A", sport_type: undefined },
       } as ScheduleWithCourt;
     });
   }, [schedules, courts]);
@@ -146,12 +150,12 @@ export function useDatePills() {
 
 export function useScheduleMapping(
   schedules: Schedule[],
-  reservedScheduleIds: number[],
+  reservedScheduleIds: Array<string | number>,
   selectedDateIndex: number,
   datePills: Array<{ iso: string; label: string }>,
 ) {
   return useMemo(() => {
-    const map: Record<number, Schedule[]> = {};
+    const map: Record<string, Schedule[]> = {};
     const selectedIso = datePills[selectedDateIndex]?.iso;
 
     if (!selectedIso) return map;

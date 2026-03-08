@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Pencil, Trash2, Plus } from "lucide-react";
+import { Trophy, Pencil, Trash2, Plus, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../components/Button";
 import {
@@ -36,15 +36,24 @@ import {
 import type { Court, CourtRequest, CourtUpdate } from "../types/court";
 import { capitalizeWords } from "../utils/capitalizeWords";
 
+const normalizeId = (value: string): string | number =>
+  /^\d+$/.test(value) ? Number(value) : value;
+
+const formatPrice = (value: unknown) => {
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) return "0.00";
+  return numericValue.toFixed(2);
+};
+
 export default function OwnerCourts() {
   const {
     data: arenas = [],
     isLoading: arenasLoading,
     isError: arenasError,
   } = useOwnerArenas();
-  const [formSelectedArena, setFormSelectedArena] = useState<number | null>(
-    null,
-  );
+  const [formSelectedArena, setFormSelectedArena] = useState<
+    string | number | null
+  >(null);
 
   const {
     data: courts = [],
@@ -66,7 +75,7 @@ export default function OwnerCourts() {
     defaultValues: {
       arena_id: "",
       name: "",
-      sports_type: "",
+      sport_type: "",
       price_per_hour: "",
     },
     mode: "onChange",
@@ -83,21 +92,21 @@ export default function OwnerCourts() {
       form.reset({
         arena_id: "",
         name: "",
-        sports_type: "",
+        sport_type: "",
         price_per_hour: "",
       });
     }
   }, [dialogOpen, editingCourt, form]);
 
   const handleSubmit = (data: any) => {
-    const arenaId = Number(data.arena_id);
+    const arenaId = data.arena_id;
     if (!arenaId) {
       toast.error("Selecione uma arena");
       return;
     }
 
     const price = Number(data.price_per_hour);
-    if (!data.name || !data.sports_type || Number.isNaN(price)) {
+    if (!data.name || !data.sport_type || Number.isNaN(price)) {
       toast.error("Todos os campos são obrigatórios");
       return;
     }
@@ -105,7 +114,7 @@ export default function OwnerCourts() {
     if (editingCourt) {
       const payload: CourtUpdate = {
         name: data.name,
-        sports_type: data.sports_type,
+        sport_type: data.sport_type,
         price_per_hour: price,
       };
       updateCourt(
@@ -123,7 +132,7 @@ export default function OwnerCourts() {
     const payload: CourtRequest = {
       arena_id: arenaId,
       name: data.name,
-      sports_type: data.sports_type,
+      sport_type: data.sport_type,
       price_per_hour: price,
     };
 
@@ -159,8 +168,8 @@ export default function OwnerCourts() {
     form.reset({
       arena_id: court.arena_id?.toString() || "",
       name: court.name,
-      sports_type: court.sports_type,
-      price_per_hour: court.price_per_hour.toString(),
+      sport_type: court.sport_type,
+      price_per_hour: String(court.price_per_hour ?? ""),
     });
     setDialogOpen(true);
   };
@@ -168,7 +177,7 @@ export default function OwnerCourts() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingCourt(null);
-    form.reset({ arena_id: "", name: "", sports_type: "", price_per_hour: "" });
+    form.reset({ arena_id: "", name: "", sport_type: "", price_per_hour: "" });
   };
 
   const handleCloseDeleteDialog = () => {
@@ -253,7 +262,7 @@ export default function OwnerCourts() {
                           value={field.value}
                           onValueChange={(value) => {
                             field.onChange(value);
-                            setFormSelectedArena(Number(value));
+                            setFormSelectedArena(normalizeId(value));
                           }}
                         >
                           <FormControl>
@@ -294,7 +303,7 @@ export default function OwnerCourts() {
                 />
                 <FormField
                   control={form.control}
-                  name="sports_type"
+                  name="sport_type"
                   rules={{ required: "Tipo de esporte é obrigatório" }}
                   render={({ field }) => (
                     <FormItem>
@@ -406,42 +415,58 @@ export default function OwnerCourts() {
           {courts.map((court) => (
             <div
               key={court.id}
-              className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow border border-gray-100"
+              className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Trophy className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {capitalizeWords(court.name)}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {capitalizeWords(court.sports_type)}
-                    </p>
+              <div className="relative h-32 overflow-hidden">
+                <img
+                  src="/court-card-cover.svg"
+                  alt={`Capa da quadra ${court.name}`}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/10 to-transparent" />
+                <div className="absolute top-3 right-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-800">
+                  {capitalizeWords(court.sport_type ?? "Quadra")}
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="mb-4">
+                  <h3 className="mb-1 line-clamp-1 text-lg font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
+                    {capitalizeWords(court.name)}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4 text-emerald-600" />
+                    <span className="line-clamp-1">
+                      {capitalizeWords(
+                        arenas.find((arena) => arena.id === court.arena_id)
+                          ?.name ?? "Arena",
+                      )}
+                    </span>
                   </div>
                 </div>
-                <p className="text-sm font-semibold text-gray-900">
-                  R$ {court.price_per_hour.toFixed(2)}
+
+                <p className="mb-3 text-lg font-bold text-gray-900">
+                  R$ {formatPrice(court.price_per_hour)}/hora
                 </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">
-                <Button
-                  variant="secondary"
-                  onClick={() => handleEdit(court)}
-                  disabled={isUpdating || isDeleting}
-                >
-                  <Pencil className="h-3 w-3 mr-1" />
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDelete(court)}
-                  disabled={isDeleting || isUpdating}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+
+                <div className="grid grid-cols-2 gap-2 border-t border-gray-100 pt-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleEdit(court)}
+                    disabled={isUpdating || isDeleting}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDelete(court)}
+                    disabled={isDeleting || isUpdating}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

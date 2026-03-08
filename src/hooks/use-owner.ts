@@ -34,11 +34,13 @@ const updateOwnerArena = async (payload: any): Promise<Arena> => {
   return data;
 };
 
-const deleteOwnerArena = async (id: number): Promise<void> => {
+const deleteOwnerArena = async (id: string | number): Promise<void> => {
   await http.delete(`/arenas/${id}`);
 };
 
-const getOwnerCourtsByArena = async (arenaId: number): Promise<Court[]> => {
+const getOwnerCourtsByArena = async (
+  arenaId: string | number,
+): Promise<Court[]> => {
   const { data } = await http.get(`/courts/${arenaId}`);
   return data;
 };
@@ -49,19 +51,19 @@ const createOwnerCourt = async (payload: CourtRequest): Promise<Court> => {
 };
 
 const updateOwnerCourt = async (
-  id: number,
+  id: string | number,
   payload: CourtUpdate,
 ): Promise<Court> => {
   const { data } = await http.put(`/courts/${id}`, payload);
   return data;
 };
 
-const deleteOwnerCourt = async (id: number): Promise<void> => {
+const deleteOwnerCourt = async (id: string | number): Promise<void> => {
   await http.delete(`/courts/${id}`);
 };
 
 const getOwnerSchedulesByCourt = async (
-  courtId: number,
+  courtId: string | number,
 ): Promise<Schedule[]> => {
   const { data } = await http.get(`/catalog/courts/${courtId}/schedules`);
   return data;
@@ -75,14 +77,14 @@ const createOwnerSchedule = async (
 };
 
 const updateOwnerSchedule = async (
-  id: number,
+  id: string | number,
   payload: ScheduleUpdate,
 ): Promise<Schedule> => {
   const { data } = await http.put(`/schedules/${id}`, payload);
   return data;
 };
 
-const deleteOwnerSchedule = async (id: number): Promise<void> => {
+const deleteOwnerSchedule = async (id: string | number): Promise<void> => {
   await http.delete(`/schedules/${id}`);
 };
 
@@ -116,15 +118,15 @@ export function useUpdateOwnerArena() {
 
 export function useDeleteOwnerArena() {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) => deleteOwnerArena(id),
+  return useMutation<void, Error, string | number>({
+    mutationFn: (id: string | number) => deleteOwnerArena(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "arenas"] });
     },
   });
 }
 
-export function useOwnerCourtsByArena(arenaId: number | null) {
+export function useOwnerCourtsByArena(arenaId: string | number | null) {
   return useQuery<Court[], Error>({
     queryKey: ["owner", "courts", arenaId],
     queryFn: () => getOwnerCourtsByArena(arenaId!),
@@ -146,7 +148,7 @@ export function useOwnerCourtsByArenas(arenas: Arena[]) {
   }, [courtsQueries]);
 
   const courtsByArenaId = useMemo(() => {
-    const map: Record<number, Court[]> = {};
+    const map: Record<string | number, Court[]> = {};
     arenas.forEach((arena) => {
       map[arena.id] = [];
     });
@@ -184,7 +186,11 @@ export function useCreateOwnerCourt() {
 
 export function useUpdateOwnerCourt() {
   const queryClient = useQueryClient();
-  return useMutation<Court, Error, { id: number; payload: CourtUpdate }>({
+  return useMutation<
+    Court,
+    Error,
+    { id: string | number; payload: CourtUpdate }
+  >({
     mutationFn: ({ id, payload }) => updateOwnerCourt(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
@@ -194,15 +200,15 @@ export function useUpdateOwnerCourt() {
 
 export function useDeleteOwnerCourt() {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) => deleteOwnerCourt(id),
+  return useMutation<void, Error, string | number>({
+    mutationFn: (id: string | number) => deleteOwnerCourt(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "courts"] });
     },
   });
 }
 
-export function useOwnerSchedulesByCourt(courtId: number | null) {
+export function useOwnerSchedulesByCourt(courtId: string | number | null) {
   return useQuery<Schedule[], Error>({
     queryKey: ["owner", "schedules", courtId],
     queryFn: () => getOwnerSchedulesByCourt(courtId!),
@@ -224,20 +230,22 @@ export function useCreateOwnerSchedule() {
 
 export function useUpdateOwnerSchedule() {
   const queryClient = useQueryClient();
-  return useMutation<Schedule, Error, { id: number; payload: ScheduleUpdate }>(
-    {
-      mutationFn: ({ id, payload }) => updateOwnerSchedule(id, payload),
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
-      },
+  return useMutation<
+    Schedule,
+    Error,
+    { id: string | number; payload: ScheduleUpdate }
+  >({
+    mutationFn: ({ id, payload }) => updateOwnerSchedule(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
     },
-  );
+  });
 }
 
 export function useDeleteOwnerSchedule() {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) => deleteOwnerSchedule(id),
+  return useMutation<void, Error, string | number>({
+    mutationFn: (id: string | number) => deleteOwnerSchedule(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["owner", "schedules"] });
     },

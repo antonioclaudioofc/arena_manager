@@ -1,65 +1,102 @@
+import { useNavigate } from "react-router";
 import { capitalizeWords } from "../utils/capitalizeWords";
-import ScheduleCard from "./ScheduleCard";
+import { DollarSign, MapPin } from "lucide-react";
 import type { Court } from "../types/court";
 import type { ScheduleWithCourt } from "../types/schedule";
+
+const formatPrice = (value: unknown) => {
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) return null;
+  return numericValue.toFixed(2);
+};
 
 export default function CourtList({
   courts,
   scheduleMap,
   reservedScheduleIds = [],
-  onReservationSuccess,
+  arenaInfo,
 }: {
   courts: Court[];
-  scheduleMap: Record<number, ScheduleWithCourt[]>;
-  reservedScheduleIds?: number[];
-  onReservationSuccess?: () => void;
+  scheduleMap: Record<string | number, ScheduleWithCourt[]>;
+  reservedScheduleIds?: Array<string | number>;
+  arenaInfo?: { name?: string; address?: string };
 }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 justify-items-start">
       {courts.map((court) => {
         const schedules = scheduleMap[court.id] || [];
+        const sportLabel = court.sport_type
+          ? capitalizeWords(court.sport_type)
+          : "Quadra Esportiva";
+
         return (
-          <div key={court.id} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-20 h-20 rounded-md bg-gray-800" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {capitalizeWords(court.name)}
-                </h3>
-                {court.sports_type && (
-                  <div
-                    style={{ color: "var(--brand-600)" }}
-                    className="text-sm font-medium"
-                  >
-                    {capitalizeWords(court.sports_type)}
-                  </div>
-                )}
-                {court.price_per_hour && (
-                  <div className="text-sm text-gray-700 font-semibold mt-1">
-                    R$ {court.price_per_hour.toFixed(2)}/hora
-                  </div>
-                )}
-                {court.description && (
-                  <p className="text-sm text-gray-500">{court.description}</p>
-                )}
-              </div>
+          <div
+            key={court.id}
+            className="w-full max-w-[420px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+          >
+            <div className="relative h-32 md:h-36">
+              <img
+                src="/court-card-cover.svg"
+                alt={`Imagem de capa da quadra ${court.name}`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-black/30 via-black/10 to-transparent" />
+              <span className="absolute right-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-800">
+                {sportLabel}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {schedules.length === 0 ? (
-                <div className="text-sm text-gray-500">
-                  Nenhum horário disponível
+            <div className="bg-gray-50 p-4 md:p-5">
+              <h3 className="mb-3 text-lg md:text-xl leading-tight font-bold text-slate-900">
+                {capitalizeWords(court.name)}
+                {court.sport_type ? ` - ${sportLabel}` : ""}
+              </h3>
+
+              {arenaInfo?.name && (
+                <div className="mb-3">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-4 w-4 mt-1 text-slate-500" />
+                    <div>
+                      <p className="text-base md:text-lg font-semibold text-slate-900">
+                        {capitalizeWords(arenaInfo.name)}
+                      </p>
+                      {arenaInfo.address && (
+                        <p className="text-sm md:text-base text-slate-500">
+                          {capitalizeWords(arenaInfo.address)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                schedules.map((schedule) => (
-                  <ScheduleCard
-                    key={schedule.id}
-                    schedule={schedule}
-                    isReserved={reservedScheduleIds.includes(schedule.id)}
-                    onReservationSuccess={onReservationSuccess}
-                  />
-                ))
               )}
+
+              {formatPrice(court.price_per_hour) && (
+                <div className="mb-4 flex items-center gap-2.5">
+                  <DollarSign className="h-5 w-5 text-slate-700" />
+                  <p className="text-xl md:text-2xl font-bold text-slate-900">
+                    R$ {formatPrice(court.price_per_hour)}/hora
+                  </p>
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  navigate("/court-booking", {
+                    state: {
+                      court,
+                      schedules,
+                      reservedScheduleIds,
+                      arenaInfo,
+                    },
+                  });
+                }}
+                className="mb-3 w-full rounded-xl bg-emerald-600 px-5 py-2.5 text-base md:text-lg font-bold text-white transition hover:bg-emerald-700 cursor-pointer"
+              >
+                Reservar Horário
+              </button>
             </div>
           </div>
         );

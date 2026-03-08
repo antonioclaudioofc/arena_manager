@@ -3,6 +3,12 @@ import { decodeJwt } from "jose";
 import { http } from "../api/http";
 import { UserResponseSchema } from "../schemas/user.schemas";
 import type { User, UserRegister } from "../types/user";
+import { z } from "zod";
+
+const TokenSchema = z.object({
+  access_token: z.string(),
+  token_type: z.string(),
+});
 
 // ============================================================================
 // API Functions
@@ -14,18 +20,19 @@ const getMe = async (): Promise<User> => {
 };
 
 const login = async (
-  username: string,
+  email: string,
   password: string,
-): Promise<{ access_token: string }> => {
+): Promise<{ access_token: string; token_type: string }> => {
   const body = new URLSearchParams();
-  body.append("username", username);
+  // FastAPI OAuth2PasswordRequestForm expects the field name as "username".
+  body.append("username", email);
   body.append("password", password);
 
   const { data } = await http.post("/auth/login", body.toString(), {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
 
-  return data;
+  return TokenSchema.parse(data);
 };
 
 const register = async (payload: UserRegister): Promise<any> => {
@@ -109,17 +116,12 @@ export function useAuth() {
 
 export function useLogin() {
   return useMutation<
-    { access_token: string },
+    { access_token: string; token_type: string },
     Error,
-    { username: string; password: string }
+    { email: string; password: string }
   >({
-    mutationFn: ({
-      username,
-      password,
-    }: {
-      username: string;
-      password: string;
-    }) => login(username, password),
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      login(email, password),
   });
 }
 
@@ -127,4 +129,19 @@ export function useRegister() {
   return useMutation<any, Error, UserRegister>({
     mutationFn: (payload: UserRegister) => register(payload),
   });
+}
+
+export function isUnverifiedEmailError(error: unknown): boolean {
+  const message =
+    (error as any)?.response?.data?.message ||
+    (error as any)?.response?.data?.detail ||
+    (error as any)?.message ||
+    "";
+
+  const normalized = String(message)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return normalized.includes("email nao verificado");
 }

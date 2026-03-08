@@ -17,11 +17,11 @@ export default function AdminReservations() {
   const { data: reservations = [], isLoading } = useAdminReservations();
   const { mutate: deleteReservation } = useDeleteReservation();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [reservationToDelete, setReservationToDelete] = useState<number | null>(
-    null,
-  );
+  const [reservationToDelete, setReservationToDelete] = useState<
+    string | number | null
+  >(null);
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string | number) => {
     setReservationToDelete(id);
     setDeleteDialogOpen(true);
   };
@@ -96,17 +96,13 @@ export default function AdminReservations() {
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {reservation.user.first_name || reservation.user.last_name
-                      ? `${reservation.user.first_name ?? ""} ${
-                          reservation.user.last_name ?? ""
-                        }`.trim()
-                      : reservation.user.username ||
-                        reservation.user.email ||
-                        `Usuário ${reservation.user.id}`}
+                    {reservation.client?.name ||
+                      reservation.client?.email ||
+                      `Usuário ${reservation.client?.id ?? "N/A"}`}
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {reservation.schedule.court.name}
+                    {reservation.court?.name || "N/A"}
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-500">
